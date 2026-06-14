@@ -1244,7 +1244,7 @@ function renderUsers() {
       doctor: "Врачей пока нет",
       admin: "Администраторов пока нет",
     };
-    tbody.innerHTML = `<tr><td class="empty-row" colspan="5">${
+    tbody.innerHTML = `<tr><td class="empty-row" colspan="6">${
       tablePages.users.search ? "По запросу ничего не найдено" : emptyLabels[activeUserRole]
     }</td></tr>`;
     return;
@@ -1255,6 +1255,7 @@ function renderUsers() {
       (u) => `
       <tr data-row-search="${u.fullName} ${u.phone} ${u.email || ""} ${u.role}">
         <td><strong>${u.fullName}</strong></td>
+        <td>${u.phone}</td>
         <td>${u.email || "—"}</td>
         <td><span class="role-badge ${u.role}">${u.role}</span></td>
         <td>${formatDate(u.createdAt)}</td>
