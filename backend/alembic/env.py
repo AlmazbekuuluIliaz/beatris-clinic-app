@@ -31,7 +31,7 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     from sqlalchemy import create_engine
     
-    url = "mysql+pymysql://Iliaz:root@127.0.0.1:3306/railway"
+    url = "mysql+pymysql://root:MoqOgTCUTSNTTjLeeQpZoMYRCwvXoxoJ@mysql.railway.internal:3306/railway"
     connectable = create_engine(url)
 
     with connectable.connect() as connection:
