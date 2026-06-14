@@ -206,7 +206,7 @@ small {
   padding: 8px 12px;
   font-size: 12px;
   background: var(--ink-900);
-  color: var(--linen);
+  color: var(--white);
   border-color: var(--ink-900);
   transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
@@ -1170,7 +1170,7 @@ h3 {
 
 /* Подвал страниц */
 .admin-footer {
-  margin: auto -30px -32px;
+  margin: 15px -30px -32px;
   padding: 12px 30px 0;
   border-top: 1px solid var(--line);
 }
