@@ -661,6 +661,37 @@ def seed() -> None:
         for product_category in product_categories:
             db.merge(product_category)
 
+        products = [
+            models.Product(
+                id="06927730-16ea-42bc-bb88-43ad8dab09ea",
+                category_id="7db385db-1164-41d3-935b-4137a95afde6",
+                title="Тоник для лица Genosys Snow Booster 200 мл",
+                slug="tonik-dlya-lica-genosys-snow-booster-200-ml",
+                description=(
+                    "Средство сужает поры и делает их менее заметными, "
+                    "уменьшает жирный блеск, матирует, выравнивает рельеф и "
+                    "разглаживает текстуру."
+                ),
+                price=Decimal("1500.00"),
+                image_url="/uploads/products/genosys-snow-booster.png",
+                stock=5,
+                is_active=True,
+            ),
+            models.Product(
+                id="4a4ffbab-14ea-41fe-ac4b-1bca5344b4ff",
+                category_id="7db385db-1164-41d3-935b-4137a95afde6",
+                title="Крем для ухода Genosys Intensive Cream 50 мл",
+                slug="krem-dlya-uhoda-genosys-intensive-cream-50-ml",
+                description="Интенсивный крем с себорегулирующим и актимикробным действием.",
+                price=Decimal("2000.00"),
+                image_url="/uploads/products/genosys-intensive-krem.png",
+                stock=2,
+                is_active=True,
+            ),
+        ]
+        for product in products:
+            db.merge(product)
+
         specialists = [
             models.Specialist(
                 id="4bd38fe7-6d07-43c6-81c1-47e7e1279356",
@@ -819,6 +850,14 @@ def seed() -> None:
                 start_time=time(12, 0),
                 end_time=time(20, 0),
                 is_available=True,
+            ),
+            models.DoctorSchedule(
+                id="0cda9124-8ea8-4988-8001-638234c57fc3",
+                specialist_id="fde77300-d61d-4ad0-958e-1ddc7d7726ca",
+                schedule_date=date(2026, 6, 10),
+                start_time=time(18, 0),
+                end_time=time(20, 0),
+                is_available=False,
             ),
         ]
         for schedule_item in schedules:
@@ -1089,6 +1128,35 @@ def seed() -> None:
         ]
         for review in reviews:
             db.merge(review)
+
+        # Настройки клиники из раздела «Настройки» (key -> JSON-значение).
+        app_settings = [
+            models.AppSetting(key="brandName", value='"Беатрис"'),
+            models.AppSetting(key="panelName", value='"Административная панель"'),
+            models.AppSetting(key="legalName", value='"ТОО \\"Сулулык сыры\\""'),
+            models.AppSetting(key="bin", value='"130440004974"'),
+            models.AppSetting(key="licenseNumber", value='"№23-22.08.2024"'),
+            models.AppSetting(
+                key="licenseFileUrl",
+                value='"/uploads/legal/license.pdf?v=1781395997"',
+            ),
+            models.AppSetting(key="clinicAddress", value='"г. Атырау, ул. Азаттык, 24а"'),
+            models.AppSetting(key="clinicPhone", value='"+7 (775) 450 97-76"'),
+            models.AppSetting(key="clinicEmail", value='"admin_m@mail.ru"'),
+            models.AppSetting(key="clinicHours", value='"Пн–Вс 09:00–20:00"'),
+            models.AppSetting(key="currencySymbol", value='"₸"'),
+            models.AppSetting(key="locale", value='"ru-RU"'),
+            models.AppSetting(key="overviewStartDate", value='"2026-05-14"'),
+            models.AppSetting(key="paginationSizes", value="[10, 20, 50, 100]"),
+            models.AppSetting(key="onlineBookingEnabled", value="true"),
+            models.AppSetting(key="bookingHorizonDays", value="30"),
+            models.AppSetting(key="defaultSlotMinutes", value="30"),
+            models.AppSetting(key="minLeadHours", value="2"),
+            models.AppSetting(key="remindersEnabled", value="true"),
+            models.AppSetting(key="reminderLeadHours", value="24"),
+        ]
+        for setting in app_settings:
+            db.merge(setting)
 
         db.commit()
     finally:
