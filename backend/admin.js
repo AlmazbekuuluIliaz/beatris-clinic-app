@@ -387,6 +387,101 @@ async function downloadExport(path, baseName) {
   }
 }
 
+// Превращает текстовый input с data-image-folder в загрузчик файла:
+// прячет сам input (он остаётся для отправки в form), рядом ставит
+// статус + кнопки «Загрузить»/«Удалить».
+function attachImagePicker(input) {
+  if (!input || input.dataset.imagePickerWired === "true") return;
+  const folder = input.dataset.imageFolder;
+  if (!folder) return;
+
+  input.type = "hidden";
+  input.dataset.imagePickerWired = "true";
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "image-picker";
+
+  const status = document.createElement("span");
+  status.className = "image-picker__status";
+
+  const uploadBtn = document.createElement("button");
+  uploadBtn.type = "button";
+  uploadBtn.className = "btn btn-secondary image-picker__upload";
+  uploadBtn.textContent = "Загрузить";
+
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
+  removeBtn.className = "btn btn-secondary image-picker__remove";
+  removeBtn.textContent = "Удалить";
+
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = "image/jpeg,image/png,image/webp";
+  fileInput.style.display = "none";
+
+  wrapper.append(status, uploadBtn, removeBtn, fileInput);
+  input.insertAdjacentElement("afterend", wrapper);
+
+  const refresh = () => {
+    const value = input.value || "";
+    if (value) {
+      const name = value.split("/").pop().split("?")[0];
+      status.textContent = name;
+      status.classList.add("has-file");
+      removeBtn.disabled = false;
+    } else {
+      status.textContent = "Файл не загружен";
+      status.classList.remove("has-file");
+      removeBtn.disabled = true;
+    }
+  };
+
+  refresh();
+  input.addEventListener("change", refresh);
+
+  uploadBtn.addEventListener("click", () => fileInput.click());
+  removeBtn.addEventListener("click", () => {
+    input.value = "";
+    refresh();
+  });
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    uploadBtn.disabled = true;
+    const previousLabel = uploadBtn.textContent;
+    uploadBtn.textContent = "Загружаем…";
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+      const res = await fetch(`${API_BASE}/admin/uploads/image?folder=${encodeURIComponent(folder)}`, {
+        method: "POST",
+        headers,
+        body: fd,
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail));
+      }
+      const data = await res.json();
+      input.value = data.url || "";
+      refresh();
+      showToast("Изображение загружено");
+    } catch (err) {
+      showToast(`Ошибка загрузки: ${err.message}`);
+    } finally {
+      uploadBtn.disabled = false;
+      uploadBtn.textContent = previousLabel;
+      fileInput.value = "";
+    }
+  });
+}
+
+function wireAllImagePickers() {
+  document.querySelectorAll("input[data-image-folder]").forEach(attachImagePicker);
+}
+
 async function login(phone, password, remember = true) {
   const data = await apiFetch("/admin/auth/login", {
     method: "POST",
@@ -2346,6 +2441,7 @@ function bindEvents() {
   wireAutoSlug("#productCategoryForm");
   wireAutoSlug("#serviceForm");
   wireAutoSlug("#productForm");
+  wireAllImagePickers();
 
   const serviceDialog = document.querySelector("#serviceDialog");
   document.querySelector("#openServiceDialog").addEventListener("click", () => {

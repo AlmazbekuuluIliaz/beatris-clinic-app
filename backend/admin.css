@@ -1751,6 +1751,38 @@ td .table-actions {
   padding: 12px;
 }
 
+.image-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--white);
+}
+
+.image-picker__status {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-500);
+  font-size: 13px;
+}
+
+.image-picker__status.has-file {
+  color: var(--ink-900);
+  font-weight: 600;
+}
+
+.image-picker .btn {
+  min-height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+}
+
 .field select[multiple] {
   min-height: 112px;
 }
@@ -2823,7 +2855,8 @@ tbody tr:hover,
   line-height: 1;
 }
 
-/* Иконки разделов берутся из файлов uploads/icons/ и красятся в currentColor через CSS-маску */
+/* Иконки разделов — встроенные SVG в admin.html, красятся в currentColor (золотой).
+   Без зависимости от /uploads — едут вместе со страницей и не пропадают. */
 .nav-icon {
   display: grid;
   place-items: center;
@@ -2831,28 +2864,10 @@ tbody tr:hover,
 }
 
 .nav-icon svg {
-  display: none;
-}
-
-.nav-icon::before {
-  content: "";
+  display: block;
   width: 18px;
   height: 18px;
-  background-color: currentColor;
-  -webkit-mask: var(--nav-icon) center / contain no-repeat;
-  mask: var(--nav-icon) center / contain no-repeat;
 }
-
-.nav-item[data-panel="overview"] { --nav-icon: url("/uploads/icons/dashboard.svg"); }
-.nav-item[data-panel="appointments"] { --nav-icon: url("/uploads/icons/appointments.svg"); }
-.nav-item[data-panel="services"] { --nav-icon: url("/uploads/icons/services.svg"); }
-.nav-item[data-panel="specialists"] { --nav-icon: url("/uploads/icons/specialists.svg"); }
-.nav-item[data-panel="store"] { --nav-icon: url("/uploads/icons/products.svg"); }
-.nav-item[data-panel="orders"] { --nav-icon: url("/uploads/icons/orders.svg"); }
-.nav-item[data-panel="reviews"] { --nav-icon: url("/uploads/icons/reviews.svg"); }
-.nav-item[data-panel="users"] { --nav-icon: url("/uploads/icons/users.svg"); }
-.nav-item[data-panel="settings"] { --nav-icon: url("/uploads/icons/settings.svg"); }
-#logoutBtnNav { --nav-icon: url("/uploads/icons/logout.svg"); }
 
 /* Tables respond to their real available width, including browser zoom. */
 .table-col {
