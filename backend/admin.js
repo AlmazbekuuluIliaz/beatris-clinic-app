@@ -1,4 +1,3 @@
-// Снимок значений по умолчанию (из admin-config.js) — нужен для «Сбросить».
 const ADMIN_DEFAULTS = {
   apiBase: "/api/v1",
   brandName: "Беатрис",
@@ -31,9 +30,6 @@ const ADMIN_DEFAULTS = {
   ...(window.ADMIN_CONFIG || {}),
 };
 
-// Живой конфиг = значения по умолчанию. Серверные настройки подгружаются после
-// входа через loadSettings() и накладываются поверх в applySettings(). Не
-// замораживаем, чтобы раздел «Настройки» применял изменения без перезагрузки.
 const ADMIN_CONFIG = { ...ADMIN_DEFAULTS };
 
 const API_BASE = ADMIN_CONFIG.apiBase.replace(/\/+$/, "");
@@ -98,7 +94,6 @@ let state = {
   reviewsSort: { key: "author", dir: "asc" },
 };
 
-// Единый механизм пагинации и поиска по таблицам всех разделов.
 const DEFAULT_PER_PAGE = ADMIN_CONFIG.paginationSizes[0] || 10;
 const tablePages = {
   appointments: { page: 1, perPage: DEFAULT_PER_PAGE, search: "" },
@@ -110,7 +105,6 @@ const tablePages = {
   reviews: { page: 1, perPage: DEFAULT_PER_PAGE, search: "" },
 };
 
-// Соответствие «id панели → ключ таблицы».
 const PANEL_TO_SCOPE = {
   appointments: "appointments",
   services: "services",
@@ -242,7 +236,6 @@ function renderTableFooter(targetId, total, page, perPage, prefix) {
   `;
 }
 
-// Возвращает строки текущей страницы scope и рисует футер.
 function paginate(scope, rows, footerId) {
   const st = tablePages[scope];
   const totalPages = Math.max(1, Math.ceil(rows.length / st.perPage));
@@ -251,7 +244,6 @@ function paginate(scope, rows, footerId) {
   return pageSlice(rows, st.page, st.perPage);
 }
 
-// Проверяет строку таблицы на совпадение с поисковым запросом scope.
 function matchesSearch(scope, text) {
   const needle = tablePages[scope].search;
   return !needle || text.toLowerCase().includes(needle);
@@ -289,8 +281,6 @@ function wireAutoSlug(formSelector) {
   });
 }
 
-// --- API ---
-
 async function apiFetch(path, options = {}, allowRefresh = true) {
   const headers = { "Content-Type": "application/json" };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
@@ -299,8 +289,7 @@ async function apiFetch(path, options = {}, allowRefresh = true) {
     credentials: "include",
     headers: { ...headers, ...(options.headers || {}) },
   });
-  // Access-токен живёт ~30 мин. Если он протух — один раз молча обновляем его
-  // из refresh-куки и повторяем запрос (кроме самих auth-эндпоинтов).
+
   if (
     res.status === 401 &&
     allowRefresh &&
@@ -320,7 +309,6 @@ async function apiFetch(path, options = {}, allowRefresh = true) {
   return res.json();
 }
 
-// Обновляет access-токен из httpOnly refresh-куки. true — если удалось.
 async function refreshAccessToken() {
   try {
     const res = await fetch(`${API_BASE}/auth/refresh`, {
@@ -336,7 +324,6 @@ async function refreshAccessToken() {
   }
 }
 
-// При загрузке страницы пытается восстановить сессию админа из refresh-куки.
 async function tryRestoreSession() {
   if (!(await refreshAccessToken())) return false;
   try {
@@ -352,7 +339,6 @@ async function tryRestoreSession() {
   }
 }
 
-// Загрузка данных и переход в админ-панель после успешного входа/восстановления.
 async function enterAdmin() {
   await loadAll();
   await loadSettings();
@@ -387,9 +373,6 @@ async function downloadExport(path, baseName) {
   }
 }
 
-// Превращает текстовый input с data-image-folder в загрузчик файла:
-// прячет сам input (он остаётся для отправки в form), рядом ставит
-// статус + кнопки «Загрузить»/«Удалить».
 function attachImagePicker(input) {
   if (!input || input.dataset.imagePickerWired === "true") return;
   const folder = input.dataset.imageFolder;
@@ -568,7 +551,7 @@ function renderPriorityList() {
             <strong>${a.patientName}</strong>
             <small>${a.patientPhone || "телефон не указан"}</small>
           </div>
-          ${statusBadge(a.status, appointmentStatuses)}
+          ${statusBadge(a.status, appointmentStatuses)}${a.status === "pending" ? `<br />${scheduleMatchBadge(a)}` : ""}
         </header>
         <dl class="action-item-body">
           <div><dt>Услуга</dt><dd>${a.service.title}</dd></div>
@@ -783,8 +766,6 @@ function openAppointmentEditDialog(appointmentId) {
   dialog.showModal();
 }
 
-// Перестраивает список специалистов в форме переноса, показывая для каждого
-// статус по выбранным дате и времени: свободно (с окном), занято или вне расписания.
 function refreshApptEditSpecialistOptions(appointment) {
   const select = document.querySelector("#apptEditSpecialistSelect");
   const dateInput = document.querySelector("#apptEditDate");
@@ -834,10 +815,9 @@ function refreshApptEditSpecialistOptions(appointment) {
   select.innerHTML = options.join("");
 }
 
-// Заявка = ожидает решения; Запись = принятая (подтверждена/завершена)
 const APPOINTMENT_GROUPS = {
   requests: ["pending"],
-  booked: ["confirmed", "completed"],
+  booked: ["confirmed", "completed", "cancelled"],
   cancelled: ["cancelled"],
 };
 
@@ -847,8 +827,6 @@ function matchesAppointmentFilter(appointment) {
   return group ? group.includes(appointment.status) : appointment.status === activeStatusFilter;
 }
 
-// Заявка «в расписании», если её время попадает в доступное окно того же
-// специалиста на ту же дату (по загруженному doctor_schedule).
 function isAppointmentInSchedule(appointment) {
   return state.schedule.some(
     (slot) =>
@@ -899,8 +877,8 @@ function renderAppointments() {
   const counts = { all: state.appointments.length, requests: 0, booked: 0, cancelled: 0 };
   state.appointments.forEach((a) => {
     if (a.status === "pending") counts.requests += 1;
-    else if (a.status === "confirmed" || a.status === "completed") counts.booked += 1;
-    else if (a.status === "cancelled") counts.cancelled += 1;
+    else counts.booked += 1;
+    if (a.status === "cancelled") counts.cancelled += 1;
   });
   document.querySelectorAll("[data-count]").forEach((el) => {
     el.textContent = counts[el.dataset.count] ?? 0;
@@ -943,7 +921,6 @@ function renderAppointments() {
 
       return `
         <tr data-row-search="${a.patientName} ${a.patientPhone} ${a.service.title} ${a.specialist.fullName} ${a.appointmentNumber || ""}" data-select-appointment="${a.id}">
-          <td><span class="appointment-phone">${a.patientPhone || "—"}</span></td>
           <td><strong>${a.patientName}</strong></td>
           <td>${a.service.title}</td>
           <td>${a.specialist.fullName}</td>
@@ -1841,6 +1818,13 @@ function bindEvents() {
       switchPanel(button.dataset.jump);
       if (button.dataset.jump === "specialists" && button.dataset.jumpTab) {
         activateSpecTab(button.dataset.jumpTab);
+      }
+      if (button.dataset.jump === "appointments" && button.dataset.jumpTab) {
+        activeStatusFilter = button.dataset.jumpTab;
+        document.querySelectorAll("[data-status-filter]").forEach((b) => b.classList.remove("is-active"));
+        const targetBtn = document.querySelector(`[data-status-filter="${button.dataset.jumpTab}"]`);
+        if (targetBtn) targetBtn.classList.add("is-active");
+        renderAppointments();
       }
     });
   });

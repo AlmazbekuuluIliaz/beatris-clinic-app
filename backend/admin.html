@@ -125,10 +125,13 @@
             <strong>Новые заявки</strong>
             <span class="sn-count" id="sidebarPendingCount">0</span>
           </div>
+          <div class="sn-sub" id="sidebarPendingStatus" hidden></div>
         </button>
       </aside>
 
       <main class="admin-main">
+        <div class="top-strip" id="siteBanner"><span class="site-banner-icon">★</span><span class="site-banner-text">Эстетическая медицина • индивидуальный подход • естественные результаты</span></div>
+
         <header class="admin-topbar" hidden>
           <div class="topbar-actions">
             <label class="search-field">
@@ -174,7 +177,7 @@
             <section class="surface">
               <div class="surface-head">
                 <h3>Очередь действий</h3>
-                <button class="link-button" type="button" data-jump="appointments">К пациентам</button>
+                <button class="link-button" type="button" data-jump="appointments" data-jump-tab="booked">К пациентам</button>
               </div>
               <div class="action-list" id="priorityList"></div>
             </section>
@@ -225,7 +228,6 @@
                 <table>
                   <thead>
                     <tr>
-                      <th class="sortable" data-sort-appointments="phone">Телефон <span class="sort-arrow">↕</span></th>
                       <th class="sortable" data-sort-appointments="patient">Пациент <span class="sort-arrow">↕</span></th>
                       <th class="sortable" data-sort-appointments="service">Услуга <span class="sort-arrow">↕</span></th>
                       <th class="sortable" data-sort-appointments="specialist">Специалист <span class="sort-arrow">↕</span></th>
@@ -475,7 +477,6 @@
                 <thead>
                   <tr>
                     <th class="sortable" data-sort-users="fullName">Пользователь <span class="sort-arrow">↕</span></th>
-                    <th class="sortable" data-sort-users="phone">Телефон <span class="sort-arrow">↕</span></th>
                     <th class="sortable" data-sort-users="email">E-mail <span class="sort-arrow">↕</span></th>
                     <th class="sortable" data-sort-users="role">Роль <span class="sort-arrow">↕</span></th>
                     <th class="sortable" data-sort-users="createdAt">Создан <span class="sort-arrow">↕</span></th>

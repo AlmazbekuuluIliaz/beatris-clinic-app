@@ -1,4 +1,3 @@
-// Change these values to configure the admin panel without editing admin.js.
 window.ADMIN_CONFIG = {
   apiBase: "/api/v1",
   brandName: "Беатрис",
