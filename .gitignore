@@ -1,0 +1,15 @@
+.venv/
+.env
+__pycache__/
+*.py[cod]
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+*.log
+
+db-init/*.sql
+
+# Local database backups
+backups/

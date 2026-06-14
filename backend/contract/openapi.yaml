@@ -1,0 +1,2633 @@
+openapi: 3.0.3
+
+info:
+  title: Beatris API
+  version: 1.0.0
+  description: API веб-приложения медицинского центра эстетической медицины Beatris
+
+servers:
+  - url: /api/v1
+    description: Основной относительный адрес API
+
+tags:
+  - name: Clinic
+    description: Публичная информация о клинике
+  - name: Auth
+    description: Регистрация, авторизация и обновление токена доступа
+  - name: Users
+    description: Профиль пользователя
+  - name: Services
+    description: Услуги медицинского центра
+  - name: Specialists
+    description: Специалисты медицинского центра
+  - name: Appointments
+    description: Онлайн-запись на приём
+  - name: Products
+    description: Товары интернет-магазина
+  - name: Wishlist
+    description: Избранные товары пользователя
+  - name: Cart
+    description: Корзина пользователя
+  - name: Orders
+    description: Заказы и оплата
+  - name: Recommendations
+    description: Рекомендации врача
+  - name: Doctor
+    description: Функции врача
+  - name: Admin
+    description: Управление данными в административной панели
+
+paths:
+  /clinic-info:
+    get:
+      tags:
+        - Clinic
+      summary: Получить информацию о клинике
+      description: Возвращает публичную информацию о клинике, контакты, адрес и график работы.
+      operationId: getClinicInfo
+      responses:
+        "200":
+          description: Информация о клинике успешно получена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClinicInfo"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/register:
+    post:
+      tags:
+        - Auth
+      summary: Зарегистрировать пользователя
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Пользователь успешно зарегистрирован
+          headers:
+            Set-Cookie:
+              description: HttpOnly cookie с refresh token
+              schema:
+                type: string
+                example: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth/refresh
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Авторизовать пользователя
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Пользователь успешно авторизован
+          headers:
+            Set-Cookie:
+              description: HttpOnly cookie с refresh token
+              schema:
+                type: string
+                example: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9; HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth/refresh
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Обновить access token
+      description: Использует refresh token из защищённой HttpOnly cookie и возвращает новый access token.
+      operationId: refreshAccessToken
+      security:
+        - refreshCookie: []
+      responses:
+        "200":
+          description: Access token успешно обновлён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshTokenResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Завершить сеанс пользователя
+      operationId: logoutUser
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Пользователь успешно вышел из системы
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Получить текущего пользователя
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Данные текущего пользователя успешно получены
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /users/me:
+    get:
+      tags:
+        - Users
+      summary: Получить профиль пользователя
+      operationId: getMyProfile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Профиль пользователя успешно получен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    patch:
+      tags:
+        - Users
+      summary: Изменить профиль пользователя
+      operationId: updateMyProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Профиль пользователя успешно изменён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /service-categories:
+    get:
+      tags:
+        - Services
+      summary: Получить категории услуг
+      operationId: getServiceCategories
+      responses:
+        "200":
+          description: Категории услуг успешно получены
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ServiceCategory"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /services:
+    get:
+      tags:
+        - Services
+      summary: Получить список услуг
+      operationId: getServices
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - name: categorySlug
+          in: query
+          description: Slug категории услуги
+          required: false
+          schema:
+            type: string
+            example: injection-cosmetology
+        - name: minPrice
+          in: query
+          description: Минимальная стоимость услуги
+          required: false
+          schema:
+            type: number
+            minimum: 0
+            example: 10000
+        - name: maxPrice
+          in: query
+          description: Максимальная стоимость услуги
+          required: false
+          schema:
+            type: number
+            minimum: 0
+            example: 50000
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Список услуг успешно получен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServiceListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /services/{slug}:
+    get:
+      tags:
+        - Services
+      summary: Получить услугу по slug
+      operationId: getServiceBySlug
+      parameters:
+        - $ref: "#/components/parameters/Slug"
+      responses:
+        "200":
+          description: Услуга успешно получена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /specialists:
+    get:
+      tags:
+        - Specialists
+      summary: Получить список специалистов
+      operationId: getSpecialists
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - name: serviceId
+          in: query
+          description: Фильтр по идентификатору услуги
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Список специалистов успешно получен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpecialistListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /specialists/{id}:
+    get:
+      tags:
+        - Specialists
+      summary: Получить специалиста по id
+      operationId: getSpecialistById
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Специалист успешно получен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Specialist"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /appointments/available-slots:
+    get:
+      tags:
+        - Appointments
+      summary: Получить свободное время для записи
+      operationId: getAvailableSlots
+      parameters:
+        - name: specialistId
+          in: query
+          description: Идентификатор специалиста
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: serviceId
+          in: query
+          description: Идентификатор услуги
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: date
+          in: query
+          description: Дата для поиска свободных слотов
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2026-05-20"
+      responses:
+        "200":
+          description: Свободное время успешно получено
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AvailableSlot"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /appointments:
+    post:
+      tags:
+        - Appointments
+      summary: Создать запись или заявку на приём
+      description: Endpoint доступен гостю и авторизованному пациенту. Если пользователь авторизован, данные пациента могут быть подставлены из профиля.
+      operationId: createAppointment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAppointmentRequest"
+      responses:
+        "201":
+          description: Запись на приём успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /appointments/my:
+    get:
+      tags:
+        - Appointments
+      summary: Получить мои записи
+      operationId: getMyAppointments
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Записи пациента успешно получены
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Appointment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /appointments/{id}/cancel:
+    patch:
+      tags:
+        - Appointments
+      summary: Отменить запись на приём
+      operationId: cancelAppointment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Запись успешно отменена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /product-categories:
+    get:
+      tags:
+        - Products
+      summary: Получить категории товаров
+      operationId: getProductCategories
+      responses:
+        "200":
+          description: Категории товаров успешно получены
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductCategory"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Получить список товаров
+      operationId: getProducts
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - name: categorySlug
+          in: query
+          description: Slug категории товара
+          required: false
+          schema:
+            type: string
+            example: skincare
+        - name: minPrice
+          in: query
+          description: Минимальная цена товара
+          required: false
+          schema:
+            type: number
+            minimum: 0
+            example: 5000
+        - name: maxPrice
+          in: query
+          description: Максимальная цена товара
+          required: false
+          schema:
+            type: number
+            minimum: 0
+            example: 30000
+        - name: sort
+          in: query
+          description: Сортировка товаров
+          required: false
+          schema:
+            type: string
+            enum:
+              - price_asc
+              - price_desc
+              - newest
+              - popular
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Список товаров успешно получен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductListResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /products/{slug}:
+    get:
+      tags:
+        - Products
+      summary: Получить товар по slug
+      operationId: getProductBySlug
+      parameters:
+        - $ref: "#/components/parameters/Slug"
+      responses:
+        "200":
+          description: Товар успешно получен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /wishlist:
+    get:
+      tags:
+        - Wishlist
+      summary: Получить избранные товары
+      operationId: getWishlist
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Избранные товары успешно получены
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WishlistItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /wishlist/items:
+    post:
+      tags:
+        - Wishlist
+      summary: Добавить товар в избранное
+      operationId: addWishlistItem
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddWishlistItemRequest"
+      responses:
+        "201":
+          description: Товар успешно добавлен в избранное
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WishlistItem"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /wishlist/items/{productId}:
+    delete:
+      tags:
+        - Wishlist
+      summary: Удалить товар из избранного
+      operationId: deleteWishlistItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: productId
+          in: path
+          description: Идентификатор товара
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Товар успешно удалён из избранного
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /cart:
+    get:
+      tags:
+        - Cart
+      summary: Получить корзину пользователя
+      operationId: getCart
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Корзина успешно получена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /cart/items:
+    post:
+      tags:
+        - Cart
+      summary: Добавить товар в корзину
+      operationId: addCartItem
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddCartItemRequest"
+      responses:
+        "201":
+          description: Товар успешно добавлен в корзину
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /cart/items/{itemId}:
+    patch:
+      tags:
+        - Cart
+      summary: Изменить количество товара в корзине
+      operationId: updateCartItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: itemId
+          in: path
+          description: Идентификатор позиции корзины
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateCartItemRequest"
+      responses:
+        "200":
+          description: Количество товара успешно изменено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Cart
+      summary: Удалить товар из корзины
+      operationId: deleteCartItem
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: itemId
+          in: path
+          description: Идентификатор позиции корзины
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Товар успешно удалён из корзины
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /orders:
+    post:
+      tags:
+        - Orders
+      summary: Оформить заказ
+      operationId: createOrder
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrderRequest"
+      responses:
+        "201":
+          description: Заказ успешно оформлен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /orders/my:
+    get:
+      tags:
+        - Orders
+      summary: Получить мои заказы
+      operationId: getMyOrders
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Заказы пользователя успешно получены
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /orders/{id}:
+    get:
+      tags:
+        - Orders
+      summary: Получить заказ по id
+      operationId: getOrderById
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Заказ успешно получен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /orders/{id}/payment:
+    post:
+      tags:
+        - Orders
+      summary: Создать платёж для заказа
+      operationId: createOrderPayment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Платёж успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentCreateResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /recommendations/my:
+    get:
+      tags:
+        - Recommendations
+      summary: Получить мои рекомендации
+      operationId: getMyRecommendations
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Рекомендации успешно получены
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Recommendation"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /recommendations:
+    post:
+      tags:
+        - Recommendations
+      summary: Создать рекомендацию для пациента
+      operationId: createRecommendation
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRecommendationRequest"
+      responses:
+        "201":
+          description: Рекомендация успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Recommendation"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /doctor/schedule:
+    get:
+      tags:
+        - Doctor
+      summary: Получить расписание текущего врача
+      operationId: getDoctorSchedule
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-05-20"
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-05-27"
+      responses:
+        "200":
+          description: Расписание врача успешно получено
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DoctorScheduleItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /doctor/appointments:
+    get:
+      tags:
+        - Doctor
+      summary: Получить записи пациентов текущего врача
+      operationId: getDoctorAppointments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-05-20"
+      responses:
+        "200":
+          description: Записи пациентов успешно получены
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Appointment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/clinic-info:
+    patch:
+      tags:
+        - Admin
+      summary: Изменить информацию о клинике
+      operationId: updateClinicInfo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateClinicInfoRequest"
+      responses:
+        "200":
+          description: Информация о клинике успешно изменена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClinicInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/services:
+    post:
+      tags:
+        - Admin
+      summary: Добавить услугу
+      operationId: createService
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceUpsertRequest"
+      responses:
+        "201":
+          description: Услуга успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/services/{id}:
+    patch:
+      tags:
+        - Admin
+      summary: Изменить услугу
+      operationId: updateService
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ServiceUpsertRequest"
+      responses:
+        "200":
+          description: Услуга успешно изменена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Service"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Admin
+      summary: Удалить услугу
+      operationId: deleteService
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Услуга успешно удалена
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/specialists:
+    post:
+      tags:
+        - Admin
+      summary: Добавить специалиста
+      operationId: createSpecialist
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpecialistUpsertRequest"
+      responses:
+        "201":
+          description: Специалист успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Specialist"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/specialists/{id}:
+    patch:
+      tags:
+        - Admin
+      summary: Изменить специалиста
+      operationId: updateSpecialist
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpecialistUpsertRequest"
+      responses:
+        "200":
+          description: Специалист успешно изменён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Specialist"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Admin
+      summary: Удалить специалиста
+      operationId: deleteSpecialist
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Специалист успешно удалён
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/products:
+    post:
+      tags:
+        - Admin
+      summary: Добавить товар
+      operationId: createProduct
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpsertRequest"
+      responses:
+        "201":
+          description: Товар успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/products/{id}:
+    patch:
+      tags:
+        - Admin
+      summary: Изменить товар
+      operationId: updateProduct
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpsertRequest"
+      responses:
+        "200":
+          description: Товар успешно изменён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+    delete:
+      tags:
+        - Admin
+      summary: Удалить товар
+      operationId: deleteProduct
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Товар успешно удалён
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/appointments/{id}:
+    patch:
+      tags:
+        - Admin
+      summary: Изменить статус записи
+      operationId: updateAppointmentStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAppointmentStatusRequest"
+      responses:
+        "200":
+          description: Статус записи успешно изменён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/appointments/{id}/reschedule:
+    patch:
+      tags:
+        - Admin
+      summary: Перенести запись
+      operationId: rescheduleAppointment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RescheduleAppointmentRequest"
+      responses:
+        "200":
+          description: Запись успешно перенесена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/appointments/{id}/contact:
+    patch:
+      tags:
+        - Admin
+      summary: Зафиксировать контакт с пациентом по записи
+      operationId: updateAppointmentContact
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAppointmentContactRequest"
+      responses:
+        "200":
+          description: Результат контакта успешно сохранён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/orders/{id}:
+    patch:
+      tags:
+        - Admin
+      summary: Изменить статус заказа
+      operationId: updateOrderStatus
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrderStatusRequest"
+      responses:
+        "200":
+          description: Статус заказа успешно изменён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/users/{id}:
+    patch:
+      tags:
+        - Admin
+      summary: Изменить данные или роль пользователя
+      operationId: updateUserByAdmin
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUpdateUserRequest"
+      responses:
+        "200":
+          description: Пользователь успешно изменён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Access token, передаваемый в заголовке Authorization
+    refreshCookie:
+      type: apiKey
+      in: cookie
+      name: refreshToken
+      description: Refresh token, хранящийся в защищённой HttpOnly cookie
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      description: Уникальный идентификатор ресурса
+      required: true
+      schema:
+        type: string
+        format: uuid
+        example: 550e8400-e29b-41d4-a716-446655440000
+    Slug:
+      name: slug
+      in: path
+      description: Человекочитаемый идентификатор ресурса
+      required: true
+      schema:
+        type: string
+        example: biorevitalizatsiya
+    Search:
+      name: search
+      in: query
+      description: Поисковая строка
+      required: false
+      schema:
+        type: string
+        example: акне
+    Page:
+      name: page
+      in: query
+      description: Номер страницы
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    Limit:
+      name: limit
+      in: query
+      description: Количество элементов на странице
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  responses:
+    BadRequest:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            statusCode: 400
+            message: Некорректные данные запроса
+            error: Bad Request
+    Unauthorized:
+      description: Пользователь не авторизован
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            statusCode: 401
+            message: Необходимо выполнить вход в систему
+            error: Unauthorized
+    Forbidden:
+      description: Недостаточно прав доступа
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            statusCode: 403
+            message: Недостаточно прав для выполнения действия
+            error: Forbidden
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            statusCode: 404
+            message: Запрашиваемый ресурс не найден
+            error: Not Found
+    ValidationError:
+      description: Ошибка валидации данных
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationErrorResponse"
+          example:
+            statusCode: 422
+            message:
+              - phone должен быть указан
+              - serviceId должен быть UUID
+            error: Unprocessable Entity
+    InternalServerError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            statusCode: 500
+            message: Внутренняя ошибка сервера
+            error: Internal Server Error
+
+  schemas:
+    Role:
+      type: string
+      enum:
+        - patient
+        - doctor
+        - admin
+      example: patient
+
+    AppointmentStatus:
+      type: string
+      enum:
+        - pending
+        - confirmed
+        - completed
+        - cancelled
+      example: confirmed
+
+    OrderStatus:
+      type: string
+      enum:
+        - created
+        - paid
+        - processing
+        - delivered
+        - cancelled
+      example: paid
+
+    PaymentStatus:
+      type: string
+      enum:
+        - pending
+        - paid
+        - failed
+        - refunded
+      example: pending
+
+    PaginationMeta:
+      type: object
+      required:
+        - page
+        - limit
+        - total
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 120
+
+    ErrorResponse:
+      type: object
+      required:
+        - statusCode
+        - message
+        - error
+      properties:
+        statusCode:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: Некорректные данные запроса
+        error:
+          type: string
+          example: Bad Request
+
+    ValidationErrorResponse:
+      type: object
+      required:
+        - statusCode
+        - message
+        - error
+      properties:
+        statusCode:
+          type: integer
+          example: 422
+        message:
+          type: array
+          items:
+            type: string
+          example:
+            - phone должен быть указан
+            - serviceId должен быть UUID
+        error:
+          type: string
+          example: Unprocessable Entity
+
+    User:
+      type: object
+      description: Пользователь системы
+      required:
+        - id
+        - fullName
+        - phone
+        - role
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        fullName:
+          type: string
+          example: Айгуль Нурланова
+        phone:
+          type: string
+          example: "+77001234567"
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: user@example.com
+        role:
+          $ref: "#/components/schemas/Role"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-20T10:00:00Z"
+
+    RegisterRequest:
+      type: object
+      required:
+        - fullName
+        - phone
+        - password
+      properties:
+        fullName:
+          type: string
+          example: Айгуль Нурланова
+        phone:
+          type: string
+          example: "+77001234567"
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          minLength: 8
+          example: qwerty123
+
+    LoginRequest:
+      type: object
+      required:
+        - phone
+        - password
+      properties:
+        phone:
+          type: string
+          example: "+77001234567"
+        password:
+          type: string
+          format: password
+          example: qwerty123
+
+    AuthResponse:
+      type: object
+      required:
+        - accessToken
+        - tokenType
+        - expiresIn
+        - user
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          description: Время жизни access token в секундах
+          example: 900
+        user:
+          $ref: "#/components/schemas/User"
+
+    RefreshTokenResponse:
+      type: object
+      required:
+        - accessToken
+        - tokenType
+        - expiresIn
+      properties:
+        accessToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          example: 900
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+          example: Айгуль Нурланова
+        phone:
+          type: string
+          example: "+77001234567"
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: user@example.com
+
+    ClinicInfo:
+      type: object
+      description: Информация о клинике
+      required:
+        - id
+        - name
+        - description
+        - address
+        - phone
+        - workingHours
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 0db33154-9a88-41c3-91de-dc24cc2a4f18
+        name:
+          type: string
+          example: Beatris
+        description:
+          type: string
+          example: Медицинский центр эстетической медицины
+        address:
+          type: string
+          example: Казахстан, г. Атырау, ул. Абая, 10
+        phone:
+          type: string
+          example: "+77001234567"
+        whatsapp:
+          type: string
+          nullable: true
+          example: "+77001234567"
+        instagram:
+          type: string
+          nullable: true
+          example: https://instagram.com/beatris
+        workingHours:
+          type: string
+          example: Пн-Сб 09:00-20:00
+        mapUrl:
+          type: string
+          nullable: true
+          example: https://maps.example.com/beatris
+
+    UpdateClinicInfoRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Beatris
+        description:
+          type: string
+          example: Медицинский центр эстетической медицины
+        address:
+          type: string
+          example: Казахстан, г. Атырау, ул. Абая, 10
+        phone:
+          type: string
+          example: "+77001234567"
+        whatsapp:
+          type: string
+          nullable: true
+          example: "+77001234567"
+        instagram:
+          type: string
+          nullable: true
+          example: https://instagram.com/beatris
+        workingHours:
+          type: string
+          example: Пн-Сб 09:00-20:00
+        mapUrl:
+          type: string
+          nullable: true
+          example: https://maps.example.com/beatris
+
+    ServiceCategory:
+      type: object
+      required:
+        - id
+        - title
+        - slug
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 2c0b07ae-4b62-4c5f-b4bc-4edb886725e2
+        title:
+          type: string
+          example: Инъекционная косметология
+        slug:
+          type: string
+          example: injection-cosmetology
+
+    Service:
+      type: object
+      description: Услуга медицинского центра
+      required:
+        - id
+        - title
+        - slug
+        - description
+        - price
+        - category
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 661b9091-86a4-4512-aa0d-162c8d0c2db0
+        title:
+          type: string
+          example: Биоревитализация
+        slug:
+          type: string
+          example: biorevitalizatsiya
+        description:
+          type: string
+          example: Инъекционная процедура для увлажнения и восстановления кожи
+        price:
+          type: number
+          minimum: 0
+          example: 25000
+        durationMinutes:
+          type: integer
+          nullable: true
+          example: 60
+        category:
+          $ref: "#/components/schemas/ServiceCategory"
+        imageUrl:
+          type: string
+          nullable: true
+          example: /uploads/services/biorevitalizatsiya.jpg
+        contraindications:
+          type: string
+          nullable: true
+          example: Беременность, воспалительные процессы, индивидуальные противопоказания
+
+    ServiceUpsertRequest:
+      type: object
+      required:
+        - title
+        - slug
+        - description
+        - price
+        - categoryId
+      properties:
+        title:
+          type: string
+          example: Биоревитализация
+        slug:
+          type: string
+          example: biorevitalizatsiya
+        description:
+          type: string
+          example: Инъекционная процедура для увлажнения и восстановления кожи
+        price:
+          type: number
+          minimum: 0
+          example: 25000
+        durationMinutes:
+          type: integer
+          nullable: true
+          example: 60
+        categoryId:
+          type: string
+          format: uuid
+        imageUrl:
+          type: string
+          nullable: true
+          example: /uploads/services/biorevitalizatsiya.jpg
+        contraindications:
+          type: string
+          nullable: true
+          example: Беременность, воспалительные процессы, индивидуальные противопоказания
+
+    ServiceListResponse:
+      type: object
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Service"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    Specialist:
+      type: object
+      description: Специалист медицинского центра
+      required:
+        - id
+        - fullName
+        - position
+        - specialization
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 4bd38fe7-6d07-43c6-81c1-47e7e1279356
+        fullName:
+          type: string
+          example: Иванова Анна Сергеевна
+        position:
+          type: string
+          example: Врач-косметолог
+        specialization:
+          type: string
+          example: Инъекционная косметология
+        experienceYears:
+          type: integer
+          example: 8
+        photoUrl:
+          type: string
+          nullable: true
+          example: /uploads/specialists/ivanova.jpg
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    SpecialistUpsertRequest:
+      type: object
+      required:
+        - fullName
+        - position
+        - specialization
+      properties:
+        fullName:
+          type: string
+          example: Иванова Анна Сергеевна
+        position:
+          type: string
+          example: Врач-косметолог
+        specialization:
+          type: string
+          example: Инъекционная косметология
+        experienceYears:
+          type: integer
+          example: 8
+        photoUrl:
+          type: string
+          nullable: true
+          example: /uploads/specialists/ivanova.jpg
+        serviceIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    SpecialistListResponse:
+      type: object
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Specialist"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    AvailableSlot:
+      type: object
+      required:
+        - specialistId
+        - date
+        - time
+      properties:
+        specialistId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          example: "2026-05-20"
+        time:
+          type: string
+          example: "14:30"
+
+    CreateAppointmentRequest:
+      type: object
+      required:
+        - serviceId
+        - specialistId
+        - date
+        - time
+        - patientName
+        - patientPhone
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        specialistId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          example: "2026-05-20"
+        time:
+          type: string
+          example: "14:30"
+        patientName:
+          type: string
+          example: Айгуль Нурланова
+        patientPhone:
+          type: string
+          example: "+77001234567"
+        comment:
+          type: string
+          nullable: true
+          example: Хочу записаться на первичную консультацию
+
+    Appointment:
+      type: object
+      description: Запись на приём
+      required:
+        - id
+        - service
+        - specialist
+        - date
+        - time
+        - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+          nullable: true
+        patientName:
+          type: string
+          example: Айгуль Нурланова
+        patientPhone:
+          type: string
+          example: "+77001234567"
+        service:
+          $ref: "#/components/schemas/Service"
+        specialist:
+          $ref: "#/components/schemas/Specialist"
+        date:
+          type: string
+          format: date
+          example: "2026-05-20"
+        time:
+          type: string
+          example: "14:30"
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+        comment:
+          type: string
+          nullable: true
+          example: Первичная консультация
+        patientContactStatus:
+          type: string
+          enum:
+            - not_contacted
+            - contacted
+            - agreed
+            - declined
+          example: agreed
+        patientContactedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2026-06-09T10:00:00Z"
+        patientContactComment:
+          type: string
+          nullable: true
+          example: Пациент согласовал перенос на 15:30
+        statusHistory:
+          type: array
+          items:
+            $ref: "#/components/schemas/AppointmentStatusHistoryItem"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-11T10:00:00Z"
+
+    UpdateAppointmentStatusRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          $ref: "#/components/schemas/AppointmentStatus"
+
+    AppointmentStatusHistoryItem:
+      type: object
+      required:
+        - id
+        - previousStatus
+        - newStatus
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        adminId:
+          type: string
+          format: uuid
+          nullable: true
+        adminName:
+          type: string
+          nullable: true
+          example: Администратор Беатрис
+        previousStatus:
+          $ref: "#/components/schemas/AppointmentStatus"
+        newStatus:
+          $ref: "#/components/schemas/AppointmentStatus"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-06-09T10:00:00Z"
+
+    RescheduleAppointmentRequest:
+      type: object
+      required:
+        - specialistId
+        - date
+        - time
+      properties:
+        specialistId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          example: "2026-06-10"
+        time:
+          type: string
+          example: "15:30"
+        comment:
+          type: string
+          nullable: true
+          example: Перенос согласован по телефону
+
+    UpdateAppointmentContactRequest:
+      type: object
+      required:
+        - patientContactStatus
+      properties:
+        patientContactStatus:
+          type: string
+          enum:
+            - not_contacted
+            - contacted
+            - agreed
+            - declined
+          example: agreed
+        patientContactComment:
+          type: string
+          nullable: true
+          example: Пациент согласовал другое время
+
+    ProductCategory:
+      type: object
+      required:
+        - id
+        - title
+        - slug
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: Средства для ухода
+        slug:
+          type: string
+          example: skincare
+
+    Product:
+      type: object
+      description: Товар интернет-магазина
+      required:
+        - id
+        - title
+        - slug
+        - description
+        - price
+        - category
+        - stock
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+          example: Крем для восстановления кожи
+        slug:
+          type: string
+          example: vosstanavlivayushchiy-krem
+        description:
+          type: string
+          example: Профессиональное средство для домашнего ухода
+        price:
+          type: number
+          minimum: 0
+          example: 18000
+        category:
+          $ref: "#/components/schemas/ProductCategory"
+        imageUrl:
+          type: string
+          nullable: true
+          example: /uploads/products/cream.jpg
+        stock:
+          type: integer
+          minimum: 0
+          example: 12
+
+    ProductUpsertRequest:
+      type: object
+      required:
+        - title
+        - slug
+        - description
+        - price
+        - categoryId
+        - stock
+      properties:
+        title:
+          type: string
+          example: Крем для восстановления кожи
+        slug:
+          type: string
+          example: vosstanavlivayushchiy-krem
+        description:
+          type: string
+          example: Профессиональное средство для домашнего ухода
+        price:
+          type: number
+          minimum: 0
+          example: 18000
+        categoryId:
+          type: string
+          format: uuid
+        imageUrl:
+          type: string
+          nullable: true
+          example: /uploads/products/cream.jpg
+        stock:
+          type: integer
+          minimum: 0
+          example: 12
+
+    ProductListResponse:
+      type: object
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    AddWishlistItemRequest:
+      type: object
+      required:
+        - productId
+      properties:
+        productId:
+          type: string
+          format: uuid
+
+    WishlistItem:
+      type: object
+      required:
+        - id
+        - product
+      properties:
+        id:
+          type: string
+          format: uuid
+        product:
+          $ref: "#/components/schemas/Product"
+        createdAt:
+          type: string
+          format: date-time
+
+    AddCartItemRequest:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+          example: 1
+
+    UpdateCartItemRequest:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+
+    CartItem:
+      type: object
+      required:
+        - id
+        - product
+        - quantity
+        - price
+        - subtotal
+      properties:
+        id:
+          type: string
+          format: uuid
+        product:
+          $ref: "#/components/schemas/Product"
+        quantity:
+          type: integer
+          example: 2
+        price:
+          type: number
+          example: 18000
+        subtotal:
+          type: number
+          example: 36000
+
+    Cart:
+      type: object
+      required:
+        - items
+        - totalPrice
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/CartItem"
+        totalPrice:
+          type: number
+          example: 36000
+
+    CreateOrderRequest:
+      type: object
+      required:
+        - deliveryAddress
+        - recipientName
+        - recipientPhone
+      properties:
+        deliveryAddress:
+          type: string
+          example: г. Атырау, ул. Абая, 10
+        recipientName:
+          type: string
+          example: Айгуль Нурланова
+        recipientPhone:
+          type: string
+          example: "+77001234567"
+        comment:
+          type: string
+          nullable: true
+          example: Позвонить перед доставкой
+
+    OrderItem:
+      type: object
+      required:
+        - product
+        - quantity
+        - price
+        - subtotal
+      properties:
+        product:
+          $ref: "#/components/schemas/Product"
+        quantity:
+          type: integer
+          example: 2
+        price:
+          type: number
+          example: 18000
+        subtotal:
+          type: number
+          example: 36000
+
+    Order:
+      type: object
+      description: Заказ пользователя
+      required:
+        - id
+        - items
+        - totalPrice
+        - paymentStatus
+        - orderStatus
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrderItem"
+        totalPrice:
+          type: number
+          example: 36000
+        paymentStatus:
+          $ref: "#/components/schemas/PaymentStatus"
+        orderStatus:
+          $ref: "#/components/schemas/OrderStatus"
+        deliveryAddress:
+          type: string
+          example: г. Атырау, ул. Абая, 10
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-11T10:00:00Z"
+
+    PaymentCreateResponse:
+      type: object
+      required:
+        - paymentUrl
+        - paymentId
+      properties:
+        paymentId:
+          type: string
+          format: uuid
+        paymentUrl:
+          type: string
+          example: https://payments.example.com/pay/123
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2026-05-11T10:15:00Z"
+
+    Recommendation:
+      type: object
+      description: Рекомендация врача после приёма
+      required:
+        - id
+        - patientId
+        - doctorId
+        - text
+        - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        patientId:
+          type: string
+          format: uuid
+        doctorId:
+          type: string
+          format: uuid
+        appointmentId:
+          type: string
+          format: uuid
+          nullable: true
+        text:
+          type: string
+          example: Использовать SPF-средство утром и увлажняющий крем вечером
+        productIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-05-11T10:00:00Z"
+
+    CreateRecommendationRequest:
+      type: object
+      required:
+        - patientId
+        - text
+      properties:
+        patientId:
+          type: string
+          format: uuid
+        appointmentId:
+          type: string
+          format: uuid
+          nullable: true
+        text:
+          type: string
+          example: Использовать SPF-средство утром и увлажняющий крем вечером
+        productIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    DoctorScheduleItem:
+      type: object
+      required:
+        - date
+        - startTime
+        - endTime
+        - isAvailable
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2026-05-20"
+        startTime:
+          type: string
+          example: "09:00"
+        endTime:
+          type: string
+          example: "18:00"
+        isAvailable:
+          type: boolean
+          example: true
+
+    UpdateOrderStatusRequest:
+      type: object
+      required:
+        - orderStatus
+      properties:
+        orderStatus:
+          $ref: "#/components/schemas/OrderStatus"
+
+    AdminUpdateUserRequest:
+      type: object
+      properties:
+        fullName:
+          type: string
+          example: Айгуль Нурланова
+        phone:
+          type: string
+          example: "+77001234567"
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: user@example.com
+        role:
+          $ref: "#/components/schemas/Role"

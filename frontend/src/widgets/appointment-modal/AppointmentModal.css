@@ -1,0 +1,442 @@
+.appointment-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  padding: 14px 18px;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  background: rgba(34, 32, 31, 0.58);
+  backdrop-filter: blur(8px);
+}
+
+.appointment-modal {
+  position: relative;
+  width: min(920px, 100%);
+  display: grid;
+  grid-template-columns: 1fr 245px;
+  gap: 18px;
+  padding: 22px 26px 20px;
+  border: 1px solid rgba(230, 221, 212, 0.9);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.97);
+  box-shadow: 0 22px 60px rgba(34, 32, 31, 0.24);
+}
+
+.appointment-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.appointment-main header h2 {
+  margin: 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.appointment-main header p {
+  margin: 6px 0 10px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.appointment-step {
+  margin: 9px 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.appointment-step span {
+  width: 19px;
+  height: 19px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.appointment-step strong {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.appointment-step small {
+  color: var(--color-muted);
+}
+
+.appointment-tabs,
+.specialist-picker,
+.patient-fields {
+  display: grid;
+  gap: 7px;
+}
+
+.appointment-tabs {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.appointment-tabs button,
+.time-grid button,
+.calendar-grid button,
+.appointment-main select,
+.appointment-main input,
+.appointment-main textarea {
+  border: 1px solid var(--color-border);
+  border-radius: 7px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.appointment-tabs button {
+  min-height: 28px;
+  padding: 0 7px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.appointment-tabs .is-active,
+.time-grid .is-active,
+.calendar-grid .is-active {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.appointment-main select {
+  width: 100%;
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.specialist-picker {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.specialist-picker button {
+  position: relative;
+  min-height: 66px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.specialist-picker button.is-active {
+  border-color: var(--color-accent);
+}
+
+.specialist-picker img {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.specialist-picker strong,
+.specialist-picker small {
+  display: block;
+}
+
+.specialist-picker small {
+  margin-top: 5px;
+  color: var(--color-muted);
+  font-size: 10px;
+}
+
+.specialist-picker strong {
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+.specialist-picker svg {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  padding: 4px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.date-time-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.calendar-card {
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.calendar-head,
+.calendar-week,
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+}
+
+.calendar-head {
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.calendar-head strong {
+  grid-column: span 5;
+}
+
+.calendar-head button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.calendar-week {
+  color: var(--color-text);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.calendar-grid {
+  gap: 3px;
+  margin-top: 5px;
+}
+
+.calendar-grid button {
+  height: 25px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.calendar-grid .is-muted {
+  color: var(--color-muted);
+}
+
+.time-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.time-grid button {
+  height: 28px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.patient-fields {
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.appointment-main input {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.appointment-main textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 14px;
+  font-size: 13px;
+  resize: vertical;
+}
+
+.agreement-row {
+  margin-top: 7px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-text);
+  font-size: 12px;
+}
+
+.agreement-row input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-accent);
+}
+
+.agreement-row u {
+  color: var(--color-accent-dark);
+}
+
+.appointment-submit {
+  width: min(360px, 100%);
+  height: 38px;
+  margin: 10px auto 0;
+  display: block;
+  border: 0;
+  border-radius: 7px;
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.appointment-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.booking-summary {
+  margin-top: 56px;
+}
+
+.booking-summary,
+.summary-note {
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: rgba(239, 231, 222, 0.58);
+}
+
+.booking-summary {
+  padding: 16px 14px;
+}
+
+.booking-summary h3 {
+  margin: 0 0 8px;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.summary-row {
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  align-items: center;
+  border-bottom: 1px solid rgba(184, 154, 114, 0.24);
+  color: var(--color-accent);
+}
+
+.summary-row span,
+.summary-row strong {
+  grid-column: 2;
+}
+
+.summary-row span {
+  color: var(--color-muted);
+  font-size: 11px;
+}
+
+.summary-row strong {
+  color: var(--color-text);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.booking-summary > p {
+  margin: 12px 0;
+  color: var(--color-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.summary-note {
+  padding: 9px;
+  display: flex;
+  gap: 12px;
+  color: var(--color-accent);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.summary-note span {
+  color: var(--color-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.appointment-toast {
+  position: fixed;
+  top: 28px;
+  left: 50%;
+  z-index: 120;
+  min-height: 58px;
+  padding: 0 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--color-text);
+  box-shadow: 0 18px 42px rgba(43, 40, 38, 0.18);
+  cursor: pointer;
+}
+
+.appointment-toast svg {
+  color: var(--color-success, #5c8a64);
+}
+
+@media (max-width: 1050px) {
+  .appointment-modal {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-summary {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .appointment-overlay {
+    padding: 12px;
+  }
+
+  .appointment-modal {
+    padding: 26px 16px;
+    border-radius: 14px;
+  }
+
+  .appointment-main header h2 {
+    font-size: 36px;
+  }
+
+  .appointment-tabs,
+  .specialist-picker,
+  .date-time-grid,
+  .patient-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .time-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
