@@ -529,6 +529,18 @@ h3 {
   margin-bottom: 20px;
 }
 
+.appointment-badge-group,
+.appt-edit-badges {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.appointment-badge-group {
+  justify-content: flex-end;
+}
+
 .appt-edit-info {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -627,13 +639,13 @@ h3 {
 
 /* Center all table column headings. */
 .table-surface thead th {
-  text-align: center;
+  text-align: left;
 }
 
 .appointment-phone {
-  color: var(--ink-700);
-  font-size: 13px;
-  font-weight: 600;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
   white-space: nowrap;
 }
 
@@ -641,11 +653,6 @@ h3 {
 #appointments table td:nth-child(1) {
   width: 130px;
   white-space: nowrap;
-}
-
-/* Make emphasized text in appointments table normal weight (not bold) */
-#appointments .table-surface td strong {
-  font-weight: 400;
 }
 
 .metric-grid {
@@ -1092,16 +1099,6 @@ h3 {
   padding: 0;
 }
 
-/* Make appointment tables use the same base font size as the page (15px) */
-#appointments .table-surface table,
-#appointments .table-surface th,
-#appointments .table-surface td,
-#appointments .table-surface .table-actions,
-#appointments .table-surface .status-badge {
-  font-size: 15px;
-  font-weight: 400;
-}
-
 /* Compact status badges: make badges sit close together */
 .status-badge {
   display: inline-flex;
@@ -1112,27 +1109,6 @@ h3 {
   border-radius: 999px;
   line-height: 1;
   white-space: nowrap;
-}
-
-/* Ensure header and cells align visually */
-#appointments .table-surface th {
-  padding-top: 12px;
-  padding-bottom: 12px;
-}
-#appointments .table-surface td {
-  padding: 18px 12px;
-  vertical-align: middle;
-}
-
-/* Make bold (<strong>) inside appointments table appear normal weight */
-#appointments .table-surface td strong {
-  font-weight: 400;
-}
-
-/* Ensure appointment-phone and appt-number aren't bold */
-#appointments .table-surface .appointment-phone,
-#appointments .table-surface .appt-number {
-  font-weight: 400;
 }
 
 .top-strip {
@@ -1172,12 +1148,6 @@ h3 {
   width: auto;
 }
 
-
-#appointments .table-surface table,
-#appointments .table-surface th,
-#appointments .table-surface td {
-  font-family: var(--font-display);
-}
 
 table {
   width: 100%;
@@ -1318,7 +1288,7 @@ td {
 th {
   background: transparent;
   color: var(--ink-500);
-  font-size: 15px;
+  font-size: 13px;
   letter-spacing: 0;
   text-transform: uppercase;
   font-weight: 700;
@@ -3000,7 +2970,7 @@ tbody tr:hover,
   }
 
   .table-surface th {
-    font-size: 11px;
+    font-size: 13px;
   }
 
   .table-surface td .table-actions {
@@ -3036,13 +3006,6 @@ tbody tr:hover,
   #appointments table th:nth-child(7),
   #appointments table td:nth-child(7) { width: 13% !important; }
 
-  #appointments table th,
-  #appointments table td {
-    padding-right: 8px;
-    padding-left: 8px;
-    vertical-align: middle;
-  }
-
   #appointments table td:nth-child(2),
   #appointments table td:nth-child(3),
   #appointments table td:nth-child(4) {
@@ -3054,14 +3017,6 @@ tbody tr:hover,
   #appointments table td:nth-child(1),
   #appointments table td:nth-child(5) {
     white-space: nowrap;
-  }
-
-  #appointments .status-badge {
-    max-width: 100%;
-    padding: 5px 8px;
-    white-space: nowrap;
-    text-align: center;
-    font-size: 11px;
   }
 
   #appointments .table-actions {

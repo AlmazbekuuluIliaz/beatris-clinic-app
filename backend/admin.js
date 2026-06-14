@@ -551,7 +551,10 @@ function renderPriorityList() {
             <strong>${a.patientName}</strong>
             <small>${a.patientPhone || "телефон не указан"}</small>
           </div>
-          ${statusBadge(a.status, appointmentStatuses)}${a.status === "pending" ? `<br />${scheduleMatchBadge(a)}` : ""}
+          <div class="appointment-badge-group">
+            ${statusBadge(a.status, appointmentStatuses)}
+            ${a.status === "pending" ? scheduleMatchBadge(a) : ""}
+          </div>
         </header>
         <dl class="action-item-body">
           <div><dt>Услуга</dt><dd>${a.service.title}</dd></div>
@@ -718,9 +721,14 @@ function openAppointmentEditDialog(appointmentId) {
   if (!appointment) return;
   const dialog = document.querySelector("#appointmentEditDialog");
 
-  document.querySelector("#apptEditNumber").textContent = appointment.appointmentNumber || "—";
+  const visibleNumber = appointment.appointmentNumber || String(appointment.id || "—").slice(0, 8).toUpperCase();
+  document.querySelector("#apptEditKind").textContent = appointment.status === "pending" ? "Заявка" : "Запись";
+  document.querySelector("#apptEditNumber").textContent = visibleNumber;
   document.querySelector("#apptEditTitle").textContent = appointment.patientName;
-  document.querySelector("#apptEditStatusBadge").innerHTML = statusBadge(appointment.status, appointmentStatuses);
+  document.querySelector("#apptEditStatusBadge").innerHTML = `
+    ${statusBadge(appointment.status, appointmentStatuses)}
+    ${appointment.status === "pending" ? scheduleMatchBadge(appointment) : ""}
+  `;
 
   const phoneEl = document.querySelector("#apptEditPhone");
   phoneEl.textContent = appointment.patientPhone;
