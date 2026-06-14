@@ -4,7 +4,7 @@ from functools import lru_cache
 class Settings:
     def __init__(self) -> None:
 
-        self.database_url = "mysqlpymysql://root:MoqOgTCUTSNTTjLeeQpZoMYRCwvXoxoJ@mysql.railway.internal:3306/railway"
+        self.database_url = "mysql+pymysql://root:MoqOgTCUTSNTTjLeeQpZoMYRCwvXoxoJ@mysql.railway.internal:3306/railway"
         
         self.secret_key = os.getenv("SECRET_KEY", "change-me-in-production")
         self.algorithm = os.getenv("JWT_ALGORITHM", "HS256")
