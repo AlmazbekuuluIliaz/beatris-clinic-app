@@ -1,0 +1,1 @@
+# beatris-clinic-app
