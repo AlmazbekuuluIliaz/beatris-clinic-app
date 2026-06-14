@@ -162,6 +162,41 @@ async def upload_license_pdf(
 IMAGE_UPLOAD_FOLDERS = {"services", "categories", "products", "specialists"}
 IMAGE_MAX_BYTES = 5 * 1024 * 1024  # 5 МБ — достаточно для миниатюр карточек
 
+_CYRILLIC_TO_LATIN = {
+    "а": "a", "б": "b", "в": "v", "г": "g", "д": "d", "е": "e", "ё": "yo",
+    "ж": "zh", "з": "z", "и": "i", "й": "y", "к": "k", "л": "l", "м": "m",
+    "н": "n", "о": "o", "п": "p", "р": "r", "с": "s", "т": "t", "у": "u",
+    "ф": "f", "х": "h", "ц": "c", "ч": "ch", "ш": "sh", "щ": "sch",
+    "ъ": "", "ы": "y", "ь": "", "э": "e", "ю": "yu", "я": "ya",
+}
+
+
+def _sanitize_image_basename(original: str) -> str:
+    import re
+    # Берём только имя файла, без пути
+    name = (original or "").rsplit("/", 1)[-1].rsplit("\\", 1)[-1]
+    # Срезаем расширение — поставим своё (по реальному типу)
+    if "." in name:
+        name = name.rsplit(".", 1)[0]
+    name = name.lower()
+    # Транслитерируем кириллицу
+    name = "".join(_CYRILLIC_TO_LATIN.get(ch, ch) for ch in name)
+    # Оставляем только безопасные для URL/FS символы
+    name = re.sub(r"[^a-z0-9_-]+", "-", name).strip("-")
+    return name
+
+
+def _unique_filename(target_dir: Path, basename: str, ext: str) -> str:
+    candidate = f"{basename}.{ext}"
+    if not (target_dir / candidate).exists():
+        return candidate
+    i = 1
+    while True:
+        candidate = f"{basename}-{i}.{ext}"
+        if not (target_dir / candidate).exists():
+            return candidate
+        i += 1
+
 # Magic bytes для отсечения подделок content-type
 _IMAGE_MAGIC = (
     (b"\xff\xd8\xff", "jpg"),
@@ -212,10 +247,13 @@ async def upload_admin_image(
             detail="Поддерживаются только JPG, PNG и WebP",
         )
 
-    import uuid
     target_dir = Path("uploads") / folder
     target_dir.mkdir(parents=True, exist_ok=True)
-    filename = f"{uuid.uuid4().hex}.{ext}"
+    basename = _sanitize_image_basename(file.filename or "")
+    if not basename:
+        import uuid
+        basename = uuid.uuid4().hex
+    filename = _unique_filename(target_dir, basename, ext)
     (target_dir / filename).write_bytes(contents)
 
     return {"url": f"/uploads/{folder}/{filename}"}

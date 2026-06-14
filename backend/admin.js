@@ -1680,7 +1680,72 @@ function getUserPayload(form, isEdit) {
   return payload;
 }
 
-function switchPanel(panelId) {
+// --- Hash routing ---
+// URL формата #/services или #/appointments?tab=requests
+// PANEL_TO_SLUG задаёт, как panel-id отображается в URL.
+// Для store используем "products" вместо id панели, чтобы URL читался как /admin#/products.
+const PANEL_TO_SLUG = {
+  overview: "dashboard",
+  appointments: "appointments",
+  services: "services",
+  specialists: "specialists",
+  store: "products",
+  orders: "orders",
+  reviews: "reviews",
+  users: "users",
+  settings: "settings",
+};
+const SLUG_TO_PANEL = Object.fromEntries(
+  Object.entries(PANEL_TO_SLUG).map(([panel, slug]) => [slug, panel])
+);
+
+function parseHashRoute() {
+  const cleaned = (window.location.hash || "").replace(/^#\/?/, "");
+  const [path, query] = cleaned.split("?");
+  const panelId = SLUG_TO_PANEL[path] || "overview";
+  const params = new URLSearchParams(query || "");
+  return { panelId, params };
+}
+
+function buildHashRoute(panelId, params) {
+  const slug = PANEL_TO_SLUG[panelId] || "dashboard";
+  let hash = "#/" + slug;
+  if (params && [...params.keys()].length > 0) {
+    hash += "?" + params.toString();
+  }
+  return hash;
+}
+
+function setHashRoute(panelId, params = new URLSearchParams(), { replace = false } = {}) {
+  const next = buildHashRoute(panelId, params);
+  if (window.location.hash === next) return;
+  if (replace) {
+    history.replaceState(null, "", next);
+  } else {
+    window.location.hash = next;
+  }
+}
+
+function applyHashRoute() {
+  const { panelId, params } = parseHashRoute();
+  switchPanel(panelId, { skipHash: true });
+  const tab = params.get("tab");
+  if (!tab) return;
+  if (panelId === "appointments") {
+    const btn = document.querySelector(`[data-status-filter="${tab}"]`);
+    if (!btn) return;
+    activeStatusFilter = tab;
+    document.querySelectorAll("[data-status-filter]").forEach((b) => b.classList.remove("is-active"));
+    btn.classList.add("is-active");
+    renderAppointments();
+  } else if (panelId === "services") {
+    activateServicesTab(tab, { skipHash: true });
+  } else if (panelId === "specialists") {
+    activateSpecTab(tab, { skipHash: true });
+  }
+}
+
+function switchPanel(panelId, { skipHash = false } = {}) {
   currentPanel = panelId;
   document.querySelectorAll(".panel").forEach((panel) => {
     panel.classList.toggle("is-active", panel.id === panelId);
@@ -1699,6 +1764,7 @@ function switchPanel(panelId) {
   });
   const scope = PANEL_TO_SCOPE[panelId];
   if (scope) renderScope(scope);
+  if (!skipHash) setHashRoute(panelId);
 }
 
 function applySearch(query) {
@@ -1735,7 +1801,7 @@ function renderPendingNotification() {
   widget?.classList.toggle("has-pending", pending.length > 0);
 }
 
-function activateSpecTab(target) {
+function activateSpecTab(target, { skipHash = false } = {}) {
   document.querySelectorAll(".tab[data-spec-tab]").forEach((tab) => {
     tab.classList.toggle("is-active", tab.dataset.specTab === target);
   });
@@ -1747,9 +1813,14 @@ function activateSpecTab(target) {
     .forEach((btn) => {
       btn.hidden = btn.dataset.specTab !== target;
     });
+  if (!skipHash && currentPanel === "specialists") {
+    const params = new URLSearchParams();
+    if (target && target !== "specialists") params.set("tab", target);
+    setHashRoute("specialists", params, { replace: true });
+  }
 }
 
-function activateServicesTab(target) {
+function activateServicesTab(target, { skipHash = false } = {}) {
   document.querySelectorAll("#services .tab[data-svc-tab]").forEach((tab) => {
     tab.classList.toggle("is-active", tab.dataset.svcTab === target);
   });
@@ -1759,6 +1830,11 @@ function activateServicesTab(target) {
   document.querySelectorAll("#services .header-actions [data-svc-tab]").forEach((btn) => {
     btn.hidden = btn.dataset.svcTab !== target;
   });
+  if (!skipHash && currentPanel === "services") {
+    const params = new URLSearchParams();
+    if (target && target !== "services") params.set("tab", target);
+    setHashRoute("services", params, { replace: true });
+  }
 }
 
 function bindEvents() {
@@ -1833,6 +1909,9 @@ function bindEvents() {
         const targetBtn = document.querySelector(`[data-status-filter="${button.dataset.jumpTab}"]`);
         if (targetBtn) targetBtn.classList.add("is-active");
         renderAppointments();
+        const params = new URLSearchParams();
+        if (activeStatusFilter && activeStatusFilter !== "all") params.set("tab", activeStatusFilter);
+        setHashRoute("appointments", params, { replace: true });
       }
     });
   });
@@ -1881,8 +1960,14 @@ function bindEvents() {
       document.querySelectorAll("[data-status-filter]").forEach((b) => b.classList.remove("is-active"));
       button.classList.add("is-active");
       renderAppointments();
+      const params = new URLSearchParams();
+      if (activeStatusFilter && activeStatusFilter !== "all") params.set("tab", activeStatusFilter);
+      setHashRoute("appointments", params, { replace: true });
     });
   });
+
+  window.addEventListener("hashchange", applyHashRoute);
+  applyHashRoute();
 
   // Sortable headers (все таблицы) и пагинация
   document.addEventListener("click", (e) => {

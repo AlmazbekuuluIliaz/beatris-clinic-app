@@ -378,7 +378,8 @@ class Appointment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             "specialist_id",
             "appointment_date",
             "appointment_time",
-            name="uq_appointments_specialist_slot",
+            "active_slot_marker",
+            name="uq_appointments_active_specialist_slot",
         ),
         Index("ix_appointments_patient_id", "patient_id"),
         Index("ix_appointments_specialist_date", "specialist_id", "appointment_date"),
@@ -419,6 +420,10 @@ class Appointment(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         nullable=False,
         default=AppointmentStatus.PENDING,
         server_default=AppointmentStatus.PENDING.value,
+    )
+    active_slot_marker: Mapped[int | None] = mapped_column(
+        Integer,
+        Computed("CASE WHEN status = 'cancelled' THEN NULL ELSE 1 END", persisted=True),
     )
     comment: Mapped[str | None] = mapped_column(Text)
     patient_contact_status: Mapped[str] = mapped_column(

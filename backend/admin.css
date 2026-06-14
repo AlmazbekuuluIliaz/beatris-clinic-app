@@ -339,6 +339,8 @@ small {
 .admin-main {
   min-width: 0;
   padding: 30px;
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-topbar,
@@ -1048,8 +1050,16 @@ h3 {
 .tabs {
   display: flex;
   gap: 24px;
-  margin: 0 0 16px;
+  margin: 0 -30px 16px;
+  padding: 0 30px;
   border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 720px) {
+  .tabs {
+    margin: 0 -18px 16px;
+    padding: 0 18px;
+  }
 }
 
 .tab {
@@ -1073,7 +1083,17 @@ h3 {
 
 .tab.is-active {
   color: var(--gold-700);
-  border-bottom-color: var(--gold-700);
+}
+
+/* Вертикальная перегородка между вкладками — доходит до нижней линии */
+.tab:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 9px;
+  bottom: -1px;
+  right: -12px;
+  width: 1px;
+  background: var(--line);
 }
 
 .user-role-filter {
@@ -1121,8 +1141,8 @@ h3 {
   justify-content: center;
   gap: 8px;
   background: #22201f;
-  color: #efe7de;
-  font-size: 13px;
+  color: var(--white);
+  font-size: 12px;
   width: 100%;
   font-weight: 400;
 }
@@ -1130,15 +1150,15 @@ h3 {
   background: var(--gold-700);
   color: #fff;
   border-radius: 50%;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   display: inline-grid;
   place-items: center;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 400;
 }
 .top-strip .site-banner-text {
-  opacity: 0.95;
+  opacity: 1;
   font-weight: 400;
 }
 
@@ -1146,6 +1166,32 @@ h3 {
 .admin-main .top-strip {
   margin: -34px -30px 24px;
   width: auto;
+}
+
+/* Подвал страниц */
+.admin-footer {
+  margin: auto -30px -32px;
+  padding: 12px 30px 0;
+  border-top: 1px solid var(--line);
+}
+
+.admin-footer-copy {
+  margin: 0;
+  color: var(--ink-500);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-footer [data-admin-brand] {
+  color: inherit;
+  font-weight: inherit;
+}
+
+@media (max-width: 720px) {
+  .admin-footer {
+    margin: 16px -18px 0;
+    padding: 10px 18px 0;
+  }
 }
 
 
@@ -1766,7 +1812,7 @@ td .table-actions {
 }
 
 .admin-dialog {
-  width: min(720px, calc(100vw - 32px));
+  width: min(960px, calc(100vw - 32px));
   border: 0;
   border-radius: var(--radius);
   padding: 0;
@@ -1781,7 +1827,7 @@ td .table-actions {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--white);
-  padding: 24px;
+  padding: 32px;
   box-shadow: var(--shadow);
 }
 
