@@ -7,6 +7,7 @@ DEFAULT_DATABASE_URL = "mysql+pymysql://Iliaz:root@127.0.0.1:3306/beatris?charse
 
 load_dotenv()
 
+DEFAULT_DATABASE_URL = "mysql+pymysql://Iliaz:root@127.0.0.1:3306/beatris?charset=utf8mb4"
 
 class Settings:
     def __init__(self) -> None:
