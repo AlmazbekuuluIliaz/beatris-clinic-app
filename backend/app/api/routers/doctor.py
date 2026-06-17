@@ -1,40 +1,41 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from __future__ import annotations
+
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from app import models, repositories
 from app.api.deps import require_doctor
 from app.core.database import get_db
-from app.schemas import Appointment, DoctorScheduleItem
-from app.serializers import appointment_to_api, doctor_schedule_item_to_api
+from app.schemas import Appointment, AppointmentListResponse, DoctorSchedule
+from app.services import appointments as appointments_service
+from app.services import schedule as schedule_service
 
 router = APIRouter(prefix="/doctor", tags=["Doctor"])
 
 
-def _get_doctor_specialist(db: Session, current_user: models.User) -> models.Specialist:
-    specialist = repositories.get_specialist_by_user_id(db, current_user.id)
-    if specialist is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Doctor specialist profile not found",
-        )
-    return specialist
-
-
-@router.get("/schedule", response_model=list[DoctorScheduleItem])
+@router.get("/schedule", response_model=list[DoctorSchedule])
 def get_doctor_schedule(
-    current_user: models.User = Depends(require_doctor),
+    dateFrom: str | None = None,
+    dateTo: str | None = None,
+    current_user=Depends(require_doctor),
     db: Session = Depends(get_db),
 ) -> list[dict]:
-    specialist = _get_doctor_specialist(db, current_user)
-    schedule_items = repositories.list_doctor_schedule(db, specialist.id)
-    return [doctor_schedule_item_to_api(schedule_item) for schedule_item in schedule_items]
+    specialist = schedule_service.get_specialist_by_user_id(db, current_user.id)
+    if specialist is None:
+        return []
+    return schedule_service.list_doctor_schedule(db, specialist.id, dateFrom, dateTo)
 
 
-@router.get("/appointments", response_model=list[Appointment])
+@router.get("/appointments", response_model=AppointmentListResponse)
 def get_doctor_appointments(
-    current_user: models.User = Depends(require_doctor),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
+    dateFrom: str | None = None,
+    dateTo: str | None = None,
+    current_user=Depends(require_doctor),
     db: Session = Depends(get_db),
-) -> list[dict]:
-    specialist = _get_doctor_specialist(db, current_user)
-    appointments = repositories.list_doctor_appointments(db, specialist.id)
-    return [appointment_to_api(appointment) for appointment in appointments]
+) -> dict:
+    specialist = schedule_service.get_specialist_by_user_id(db, current_user.id)
+    if specialist is None:
+        return {"items": [], "meta": {"page": page, "limit": limit, "total": 0}}
+    items, meta = appointments_service.list_doctor_appointments_paginated(db, specialist.id, page, limit, dateFrom, dateTo)
+    return {"items": items, "meta": meta}

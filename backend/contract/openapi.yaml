@@ -425,6 +425,37 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /appointments/book:
+    post:
+      tags:
+        - Appointments
+      summary: Записаться на приём (авторизованный пациент)
+      description: Endpoint доступен только авторизованному пациенту. Данные пациента берутся из профиля.
+      operationId: bookAppointment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookAppointmentRequest"
+      responses:
+        "201":
+          description: Запись на приём успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /appointments/my:
     get:
       tags:
@@ -433,15 +464,16 @@ paths:
       operationId: getMyAppointments
       security:
         - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
       responses:
         "200":
           description: Записи пациента успешно получены
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Appointment"
+                $ref: "#/components/schemas/AppointmentListResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -968,22 +1000,31 @@ paths:
       security:
         - bearerAuth: []
       parameters:
-        - name: date
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+        - name: dateFrom
           in: query
+          description: Дата начала периода
           required: false
           schema:
             type: string
             format: date
             example: "2026-05-20"
+        - name: dateTo
+          in: query
+          description: Дата окончания периода
+          required: false
+          schema:
+            type: string
+            format: date
+            example: "2026-05-27"
       responses:
         "200":
           description: Записи пациентов успешно получены
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Appointment"
+                $ref: "#/components/schemas/AppointmentListResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -1276,6 +1317,64 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
+  /admin/appointments:
+    get:
+      tags:
+        - Admin
+      summary: Получить список записей на приём
+      operationId: getAdminAppointments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: statusFilter
+          in: query
+          description: Фильтр по статусу записи
+          required: false
+          schema:
+            type: string
+            enum:
+              - pending
+              - confirmed
+              - completed
+              - cancelled
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Список записей успешно получен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppointmentListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/appointments/pending-count:
+    get:
+      tags:
+        - Admin
+      summary: Получить количество ожидающих записей
+      operationId: getPendingAppointmentsCount
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Количество ожидающих записей
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PendingCountResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
   /admin/appointments/{id}:
     patch:
       tags:
@@ -1377,6 +1476,34 @@ paths:
           $ref: "#/components/responses/NotFound"
         "422":
           $ref: "#/components/responses/ValidationError"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /admin/appointments/{id}/status-history:
+    get:
+      tags:
+        - Admin
+      summary: Получить историю изменений статуса записи
+      operationId: getAppointmentStatusHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: История статусов успешно получена
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppointmentStatusHistoryItem"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
         "500":
           $ref: "#/components/responses/InternalServerError"
 
@@ -2631,3 +2758,51 @@ components:
           example: user@example.com
         role:
           $ref: "#/components/schemas/Role"
+
+    BookAppointmentRequest:
+      type: object
+      required:
+        - serviceId
+        - specialistId
+        - date
+        - time
+      properties:
+        serviceId:
+          type: string
+          format: uuid
+        specialistId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          example: "2026-05-20"
+        time:
+          type: string
+          example: "14:30"
+        comment:
+          type: string
+          nullable: true
+          example: Первичная консультация
+
+    AppointmentListResponse:
+      type: object
+      required:
+        - items
+        - meta
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Appointment"
+        meta:
+          $ref: "#/components/schemas/PaginationMeta"
+
+    PendingCountResponse:
+      type: object
+      required:
+        - count
+      properties:
+        count:
+          type: integer
+          example: 5
