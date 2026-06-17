@@ -1,13 +1,11 @@
+from __future__ import annotations
+
 from datetime import date, datetime, time
 from decimal import Decimal
 
 from app import models
 from app.core.database import SessionLocal
 from app.core.security import get_password_hash
-
-# Temporary development seed. SQL_Beatrice_simple.sql defines the schema only
-# and does not contain INSERT data, so these rows are sample records for local
-# API testing until real clinic data is provided.
 
 
 def seed() -> None:
@@ -991,6 +989,54 @@ def seed() -> None:
         for appointment in appointments:
             db.merge(appointment)
 
+        recommendations = [
+            models.Recommendation(
+                id="f1a2b3c4-1717-4abc-9def-515253545556",
+                patient_id=None,
+                doctor_id="de6f9708-19c5-45f3-909a-9d0837266d87",
+                appointment_id="0b46ee38-69e0-4b8f-80c9-e2f0e58fb7eb",
+                text=(
+                    "После процедуры рекомендую домашний уход: утром — тонизирование, "
+                    "вечером — увлажняющий крем. В течение двух недель избегайте сауны и "
+                    "прямого солнца, обязательно используйте SPF 30+. Повторный осмотр "
+                    "через месяц."
+                ),
+                created_at=datetime(2026, 5, 10, 16, 0),
+            ),
+            models.Recommendation(
+                id="f2b3c4d5-1818-4bcd-9ef0-616263646566",
+                patient_id=None,
+                doctor_id="df6a14ad-5e11-45c4-ae80-d7ffb6b7d8c8",
+                appointment_id="a135130b-6863-4785-9586-e728fbfe3cb3",
+                text=(
+                    "Для закрепления результата чистки лица назначаю домашний уход кремом "
+                    "с себорегулирующим действием — наносить тонким слоем дважды в день. "
+                    "Декоративную косметику ограничить на 3–4 дня."
+                ),
+                created_at=datetime(2026, 5, 10, 13, 15),
+            ),
+        ]
+        for recommendation in recommendations:
+            db.merge(recommendation)
+        db.flush()
+
+        recommendation_products = [
+            models.RecommendationProduct(
+                recommendation_id="f1a2b3c4-1717-4abc-9def-515253545556",
+                product_id="06927730-16ea-42bc-bb88-43ad8dab09ea",
+            ),
+            models.RecommendationProduct(
+                recommendation_id="f1a2b3c4-1717-4abc-9def-515253545556",
+                product_id="4a4ffbab-14ea-41fe-ac4b-1bca5344b4ff",
+            ),
+            models.RecommendationProduct(
+                recommendation_id="f2b3c4d5-1818-4bcd-9ef0-616263646566",
+                product_id="4a4ffbab-14ea-41fe-ac4b-1bca5344b4ff",
+            ),
+        ]
+        for link in recommendation_products:
+            db.merge(link)
+
         review_source_url = "https://2gis.kz/atyrau/firm/70000001034947642/tab/reviews"
         reviews = [
             models.Review(
@@ -1129,7 +1175,6 @@ def seed() -> None:
         for review in reviews:
             db.merge(review)
 
-        # Настройки клиники из раздела «Настройки» (key -> JSON-значение).
         app_settings = [
             models.AppSetting(key="brandName", value='"Беатрис"'),
             models.AppSetting(key="panelName", value='"Административная панель"'),

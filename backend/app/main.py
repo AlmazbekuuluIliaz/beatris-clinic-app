@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import os
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
@@ -30,6 +33,15 @@ app = FastAPI(
     openapi_tags=OPENAPI_TAGS,
     servers=[{"url": "/", "description": "Хост сервиса (пути уже включают префикс /api/v1)"}],
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(api_router)
 
 UPLOADS_DIR = "uploads"
@@ -44,7 +56,6 @@ def root_redirect():
 
 @app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/admin.html", response_class=HTMLResponse, include_in_schema=False)
-
 def serve_admin_html():
     with open("admin.html", "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())

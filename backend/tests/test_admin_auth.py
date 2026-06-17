@@ -3,7 +3,7 @@ from types import SimpleNamespace
 import pytest
 from fastapi import HTTPException, Response
 
-from app.api.routers import admin_auth
+from app.api.routers import auth
 from app.models import UserRole
 from app.schemas import LoginRequest
 
@@ -27,14 +27,17 @@ def test_admin_login_issues_token_for_admin_phone(monkeypatch):
         "accessToken": "token",
         "tokenType": "Bearer",
         "expiresIn": 1800,
+        "role": "admin",
         "user": {"id": admin_user.id, "role": "admin"},
+        "_refreshToken": "refresh",
+        "_remember": True,
     }
 
-    monkeypatch.setattr(admin_auth.repositories, "get_user_by_phone_or_email", lambda db, identifier: admin_user)
-    monkeypatch.setattr(admin_auth, "verify_password", lambda password, password_hash: True)
-    monkeypatch.setattr(admin_auth, "_issue_auth_response", lambda db, response, user, remember=True: expected)
+    monkeypatch.setattr(auth.auth_service, "login_admin", lambda db, payload: expected)
 
-    assert admin_auth.login_admin(payload, Response(), object()) == expected
+    result = auth.login_admin(payload, Response(), object())
+    assert result["accessToken"] == "token"
+    assert result["role"] == "admin"
 
 
 def test_admin_login_issues_token_for_admin_email(monkeypatch):
@@ -42,24 +45,21 @@ def test_admin_login_issues_token_for_admin_email(monkeypatch):
     payload = LoginRequest(phone="admin@beatris.kz", password="password")
     captured = {}
 
-    def get_user_by_phone_or_email(db, identifier):
-        captured["identifier"] = identifier
-        return admin_user
-
-    monkeypatch.setattr(admin_auth.repositories, "get_user_by_phone_or_email", get_user_by_phone_or_email)
-    monkeypatch.setattr(admin_auth, "verify_password", lambda password, password_hash: True)
-    monkeypatch.setattr(
-        admin_auth,
-        "_issue_auth_response",
-        lambda db, response, user, remember=True: {
+    def mock_login_admin(db, payload):
+        captured["identifier"] = payload.phone
+        return {
             "accessToken": "token",
             "tokenType": "Bearer",
             "expiresIn": 1800,
-            "user": {"id": user.id, "role": "admin"},
-        },
-    )
+            "role": "admin",
+            "user": {"id": admin_user.id, "role": "admin"},
+            "_refreshToken": "refresh",
+            "_remember": True,
+        }
 
-    result = admin_auth.login_admin(payload, Response(), object())
+    monkeypatch.setattr(auth.auth_service, "login_admin", mock_login_admin)
+
+    result = auth.login_admin(payload, Response(), object())
 
     assert captured["identifier"] == "admin@beatris.kz"
     assert result["user"]["role"] == "admin"
@@ -70,11 +70,10 @@ def test_admin_login_rejects_non_admin_roles(monkeypatch, role):
     non_admin_user = _user(role)
     payload = LoginRequest(phone=non_admin_user.phone, password="password")
 
-    monkeypatch.setattr(admin_auth.repositories, "get_user_by_phone_or_email", lambda db, identifier: non_admin_user)
-    monkeypatch.setattr(admin_auth, "verify_password", lambda password, password_hash: True)
+    monkeypatch.setattr(auth.auth_service, "login_admin", lambda db, payload: (_ for _ in ()).throw(ValueError("invalid_credentials")))
 
     with pytest.raises(HTTPException) as exc:
-        admin_auth.login_admin(payload, Response(), object())
+        auth.login_admin(payload, Response(), object())
 
     assert exc.value.status_code == 401
 
@@ -83,10 +82,9 @@ def test_admin_login_rejects_wrong_password(monkeypatch):
     admin_user = _user(UserRole.ADMIN)
     payload = LoginRequest(phone=admin_user.phone, password="wrong")
 
-    monkeypatch.setattr(admin_auth.repositories, "get_user_by_phone_or_email", lambda db, identifier: admin_user)
-    monkeypatch.setattr(admin_auth, "verify_password", lambda password, password_hash: False)
+    monkeypatch.setattr(auth.auth_service, "login_admin", lambda db, payload: (_ for _ in ()).throw(ValueError("invalid_credentials")))
 
     with pytest.raises(HTTPException) as exc:
-        admin_auth.login_admin(payload, Response(), object())
+        auth.login_admin(payload, Response(), object())
 
     assert exc.value.status_code == 401

@@ -120,7 +120,7 @@
             <span>Выйти</span>
           </button>
         </nav>
-        <button class="sidebar-note sidebar-notifications" id="appointmentsNotification" type="button" data-jump="appointments">
+        <button class="sidebar-note sidebar-notifications" id="appointmentsNotification" type="button" data-jump="appointments" data-jump-tab="requests">
           <div class="sn-head">
             <strong>Новые заявки</strong>
             <span class="sn-count" id="sidebarPendingCount">0</span>
@@ -173,6 +173,97 @@
             </article>
           </div>
 
+          <section class="surface sales-analytics" id="servicesAnalytics">
+            <div class="surface-head">
+              <h3>Приемы</h3>
+              <div class="segmented" role="group" aria-label="Период приемов">
+                <button type="button" data-services-period="7">7 дней</button>
+                <button class="is-active" type="button" data-services-period="30">30 дней</button>
+                <button type="button" data-services-period="90">90 дней</button>
+              </div>
+            </div>
+
+            <div class="sales-kpi sales-kpi--4">
+              <article class="metric">
+                <span>Всего записей</span>
+                <strong id="apptTotal">0</strong>
+                <small id="servicesPeriodLabel">за 30 дней</small>
+              </article>
+              <article class="metric">
+                <span>Завершено</span>
+                <strong id="apptCompleted">0</strong>
+                <small>проведённые приёмы</small>
+              </article>
+              <article class="metric">
+                <span>Ожидают</span>
+                <strong id="apptPending">0</strong>
+                <small>новые заявки</small>
+              </article>
+              <article class="metric">
+                <span>Отменено</span>
+                <strong id="apptCancelled">0</strong>
+                <small>за период</small>
+              </article>
+            </div>
+
+            <div class="sales-body">
+              <div class="sales-chart-box">
+                <canvas id="servicesTrendChart" height="220" aria-label="Завершённые приёмы по дням"></canvas>
+                <p class="muted sales-empty" id="servicesTrendEmpty" hidden>За выбранный период завершённых приёмов нет.</p>
+              </div>
+              <div class="sales-top">
+                <h4>Топ услуг</h4>
+                <div class="services-breakdown">
+                  <div class="services-donut">
+                    <canvas id="servicesChart" height="160" aria-label="Доля приёмов по услугам"></canvas>
+                    <p class="muted sales-empty" id="servicesChartEmpty" hidden>Нет данных за период.</p>
+                  </div>
+                  <ol class="sales-top-list" id="servicesTopList"></ol>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="surface sales-analytics" id="salesAnalytics">
+            <div class="surface-head">
+              <h3>Продажи</h3>
+              <div class="segmented" role="group" aria-label="Период аналитики продаж">
+                <button type="button" data-sales-period="7">7 дней</button>
+                <button class="is-active" type="button" data-sales-period="30">30 дней</button>
+                <button type="button" data-sales-period="90">90 дней</button>
+              </div>
+            </div>
+
+            <div class="sales-kpi">
+              <article class="metric">
+                <span>Выручка за период</span>
+                <strong id="salesRevenue">0 ₸</strong>
+                <small>оплаченные заказы</small>
+              </article>
+              <article class="metric">
+                <span>Заказов</span>
+                <strong id="salesOrders">0</strong>
+                <small id="salesPeriodLabel">за 30 дней</small>
+              </article>
+              <article class="metric">
+                <span>Средний чек</span>
+                <strong id="salesAvgCheck">0 ₸</strong>
+                <small>выручка / заказы</small>
+              </article>
+            </div>
+
+            <div class="sales-body">
+              <div class="sales-chart-box">
+                <canvas id="salesChart" height="220" aria-label="График выручки по дням"></canvas>
+                <p class="muted sales-empty" id="salesChartEmpty" hidden>За выбранный период продаж нет.</p>
+              </div>
+              <div class="sales-top">
+                <h4>Топ товаров</h4>
+                <ol class="sales-top-list" id="salesTopList"></ol>
+              </div>
+            </div>
+          </section>
+
           <div class="overview-grid">
             <section class="surface">
               <div class="surface-head">
@@ -197,10 +288,6 @@
             <div>
               <h1 id="appointments-title">Записи и заявки</h1>
             </div>
-            <div class="segmented" role="group" aria-label="Распределение заявок и записей">
-              <button class="is-active" type="button" data-status-filter="requests">Заявки <span class="seg-count" data-count="requests">0</span></button>
-              <button type="button" data-status-filter="booked">Записи <span class="seg-count" data-count="booked">0</span></button>
-            </div>
           </div>
 
           <div class="appointment-filters" aria-label="Фильтры записей">
@@ -220,6 +307,12 @@
               <span>Дата</span>
               <input id="appointmentsDateFilter" type="date" />
             </label>
+            <div class="filter-control filter-control-segment">
+              <div class="segmented" role="group" aria-label="Распределение заявок и записей">
+                <button class="is-active" type="button" data-status-filter="requests">Заявки <span class="seg-count" data-count="requests">0</span></button>
+                <button type="button" data-status-filter="booked">Записи <span class="seg-count" data-count="booked">0</span></button>
+              </div>
+            </div>
           </div>
 
           <div class="workbench">
@@ -354,10 +447,6 @@
               <button class="btn btn-secondary" type="button" id="openProductCategoryDialog">Добавить категорию</button>
               <button class="btn btn-secondary" type="button" id="openProductDialog">Добавить товар</button>
             </div>
-          </div>
-
-          <div class="catalog-search">
-            <input id="productsSearch" type="search" placeholder="Поиск по товарам, категориям и описанию..." aria-label="Поиск по каталогу товаров" />
           </div>
 
           <div class="table-col">
@@ -1102,12 +1191,7 @@
               <option value="pickup">Самовывоз</option>
             </select>
           </label>
-          <div class="field field-wide">
-            <span>Товары</span>
-            <div id="orderItemsContainer" class="order-items"></div>
-            <button class="btn btn-secondary" type="button" id="orderAddItem">Добавить товар</button>
-          </div>
-          <label class="field field-wide">
+          <label class="field">
             <span>Адрес доставки</span>
             <input name="deliveryAddress" type="text" placeholder="г. Атырау, ул. Абая, 10" required />
           </label>
@@ -1119,6 +1203,11 @@
             <span>Телефон получателя</span>
             <input name="recipientPhone" type="text" placeholder="+77011112233" required />
           </label>
+          <div class="field field-wide">
+            <span>Товары</span>
+            <div id="orderItemsContainer" class="order-items"></div>
+            <button class="btn btn-secondary" type="button" id="orderAddItem">Добавить товар</button>
+          </div>
           <label class="field field-wide">
             <span>Комментарий</span>
             <textarea name="comment"></textarea>
@@ -1180,6 +1269,7 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
     <script src="admin-config.js"></script>
     <script src="admin.js"></script>
   </body>

@@ -21,8 +21,9 @@
   --shadow: 0 22px 54px rgba(70, 54, 38, 0.07);
   --shadow-soft: 0 10px 30px rgba(70, 54, 38, 0.05);
   --radius: 12px;
-  --font: Manrope, Inter, "Segoe UI", Arial, sans-serif;
-  --font-display: Manrope, Inter, "Segoe UI", Arial, sans-serif;
+  --section-gap: 20px;
+  --font: "Roboto", Manrope, Inter, "Segoe UI", Arial, sans-serif;
+  --font-display: "Roboto", Manrope, Inter, "Segoe UI", Arial, sans-serif;
 }
 
 * {
@@ -213,11 +214,27 @@ small {
 
 .sidebar-notifications strong {
   font-size: 13px;
-  color: var(--linen);
+  color: var(--white);
 }
 
 .sidebar-notifications.has-pending {
   border-color: var(--ink-900);
+}
+
+.sidebar-notifications.is-bumped {
+  animation: sidebar-note-bump 0.5s ease;
+}
+
+@keyframes sidebar-note-bump {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-notifications.is-bumped {
+    animation: none;
+  }
 }
 
 .sidebar-notifications .sn-count {
@@ -341,6 +358,7 @@ small {
   padding: 30px;
   display: flex;
   flex-direction: column;
+  gap: 15px;
 }
 
 .admin-topbar,
@@ -651,17 +669,38 @@ h3 {
   white-space: nowrap;
 }
 
+/* Fixed-layout всегда для таблицы записей — колонки не «прыгают» при ховере, */
+/* смене контента или изменении ширины окна. 6 колонок суммируются в 100%. */
+#appointments table {
+  table-layout: fixed;
+  width: 100%;
+}
+
 #appointments table th:nth-child(1),
-#appointments table td:nth-child(1) {
-  width: 130px;
-  white-space: nowrap;
+#appointments table td:nth-child(1) { width: 14%; white-space: nowrap; }
+#appointments table th:nth-child(2),
+#appointments table td:nth-child(2) { width: 18%; }
+#appointments table th:nth-child(3),
+#appointments table td:nth-child(3) { width: 18%; }
+#appointments table th:nth-child(4),
+#appointments table td:nth-child(4) { width: 16%; }
+#appointments table th:nth-child(5),
+#appointments table td:nth-child(5) { width: 14%; white-space: nowrap; }
+#appointments table th:nth-child(6),
+#appointments table td:nth-child(6) { width: 20%; }
+
+#appointments table td:nth-child(2),
+#appointments table td:nth-child(3),
+#appointments table td:nth-child(4) {
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: var(--section-gap);
 }
 
 .metric,
@@ -709,6 +748,209 @@ h3 {
 .surface-head {
   align-items: center;
   margin-bottom: 16px;
+}
+
+/* --- Аналитика продаж (сводка) --- */
+.sales-analytics {
+  margin-bottom: var(--section-gap);
+}
+
+#overview .panel-heading {
+  margin-bottom: var(--section-gap);
+}
+
+.sales-kpi {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.sales-kpi--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.sales-kpi .metric {
+  min-height: 0;
+}
+
+.services-breakdown {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.services-donut {
+  position: relative;
+  height: 180px;
+  margin-bottom: 12px;
+}
+
+.services-breakdown .services-donut {
+  flex: none;
+  width: 160px;
+  height: 160px;
+  margin-bottom: 0;
+}
+
+.services-breakdown .sales-top-list {
+  flex: 1;
+  min-width: 0;
+  gap: 6px;
+}
+
+.services-breakdown .sales-top-list li {
+  padding: 6px 8px;
+  gap: 6px;
+}
+
+.services-breakdown .sales-top-name,
+.services-breakdown .sales-top-meta {
+  font-size: 12px;
+}
+
+.services-breakdown .legend-dot {
+  width: 8px;
+  height: 8px;
+  margin: 0 4px 0 2px;
+}
+
+.services-donut canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+@media (max-width: 560px) {
+  .services-breakdown {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .services-breakdown .services-donut {
+    width: 100%;
+  }
+}
+
+.sales-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.sales-chart-box {
+  position: relative;
+  min-width: 0;
+  height: 260px;
+}
+
+.sales-chart-box canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.sales-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.sales-top h4 {
+  margin: 0 0 10px;
+  color: var(--ink-900);
+}
+
+.sales-top-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: sales-top;
+  display: grid;
+  gap: 8px;
+}
+
+.sales-top-list li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--gold-50);
+}
+
+.sales-top-list li.muted {
+  justify-content: center;
+  background: transparent;
+}
+
+.sales-top-name {
+  font-weight: 700;
+  color: var(--ink-900);
+}
+
+.sales-top-name::before {
+  counter-increment: sales-top;
+  content: counter(sales-top) ". ";
+  color: var(--gold-700);
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin: 0 6px 0 2px;
+  vertical-align: middle;
+}
+
+.sales-top-meta {
+  white-space: nowrap;
+  color: var(--ink-700);
+}
+
+.services-extra {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.status-stats {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.status-stats li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.status-stats b {
+  color: var(--ink-900);
+}
+
+.status-rates {
+  margin: 0;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .sales-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sales-kpi,
+  .sales-kpi--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .link-button {
@@ -896,21 +1138,21 @@ h3 {
   background: var(--gold-50);
   color: var(--ink-700);
   text-align: center;
-  padding: 8px 4px;
+  padding: 5px 4px;
   border-bottom: 1px solid var(--line);
   font-weight: 700;
 }
 
 .swg-header {
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
 .swg-month-day {
   min-width: 0;
-  min-height: 112px;
-  padding: 7px;
+  min-height: 76px;
+  padding: 5px;
   background: var(--white);
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
@@ -930,9 +1172,9 @@ h3 {
 }
 
 .swg-day-number {
-  margin-bottom: 5px;
+  margin-bottom: 3px;
   color: var(--ink-700);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -942,7 +1184,7 @@ h3 {
 
 .swg-day-slots {
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
 
 .swg-slot {
@@ -953,9 +1195,9 @@ h3 {
   width: 100%;
   min-width: 0;
   margin: 0;
-  padding: 3px 5px;
+  padding: 2px 5px;
   border: 1px solid var(--gold-600);
-  border-radius: 6px;
+  border-radius: 5px;
   background: var(--gold-50);
   color: var(--ink-900);
   font-family: inherit;
@@ -1162,15 +1404,14 @@ h3 {
   font-weight: 400;
 }
 
-/* Small spacing between banner and panel headings */
 .admin-main .top-strip {
   margin: -34px -30px 24px;
   width: auto;
 }
 
-/* Подвал страниц */
 .admin-footer {
   margin: 15px -30px -32px;
+  margin-top: auto;
   padding: 12px 30px 0;
   border-top: 1px solid var(--line);
 }
@@ -1259,9 +1500,14 @@ table {
 
 .appointment-filters {
   display: grid;
-  grid-template-columns: minmax(190px, 1.4fr) repeat(3, minmax(150px, 1fr));
+  grid-template-columns: minmax(110px, 0.8fr) repeat(3, minmax(120px, 1fr)) auto;
   gap: 10px;
   margin-bottom: 14px;
+}
+
+.filter-control-segment .segmented {
+  align-self: end;
+  margin: 0;
 }
 
 .filter-control {
@@ -1351,6 +1597,16 @@ tbody tr:hover {
 td strong,
 td small {
   display: block;
+}
+
+/* Чуть мельче шрифт в таблицах этих разделов (15px → 13px) */
+#services table,
+#specialists table,
+#store table,
+#orders table,
+#reviews table,
+#users table {
+  font-size: 13px;
 }
 
 .status-badge.pending,
@@ -1719,6 +1975,8 @@ td .table-actions {
   margin: 0;
   padding: 0;
   list-style: none;
+  max-height: 180px;
+  overflow-y: auto;
 }
 
 .status-history li {
@@ -1824,11 +2082,54 @@ td .table-actions {
 }
 
 .dialog-card {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--white);
-  padding: 32px;
+  padding: 22px 24px;
   box-shadow: var(--shadow);
+}
+
+/* Шапка и кнопки не сжимаются и остаются видимыми */
+.dialog-card > .dialog-head,
+.dialog-card > .dialog-actions {
+  flex: 0 0 auto;
+}
+
+/* Компактная форма в диалоге — чтобы помещалась без прокрутки.
+   overflow остаётся страховкой на случай очень длинных форм/низких экранов. */
+.dialog-card .form-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  gap: 10px 14px;
+  margin-top: 14px;
+}
+
+.dialog-card .field {
+  gap: 5px;
+}
+
+.dialog-card .field input,
+.dialog-card .field select {
+  min-height: 38px;
+}
+
+.dialog-card .field textarea {
+  min-height: 56px;
+}
+
+.dialog-card .dialog-head h1,
+.dialog-card .dialog-head h2 {
+  font-size: 22px;
+}
+
+.dialog-card .dialog-actions {
+  margin-top: 14px;
+  padding-top: 12px;
 }
 
 .icon-button {
@@ -2527,7 +2828,7 @@ h3 {
 
 .metric strong {
   font-family: var(--font-display);
-  font-size: 42px;
+  font-size: 40px;
   font-weight: 600;
 }
 
@@ -2545,6 +2846,10 @@ h3 {
     linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 244, 239, 0.82)),
     var(--paper);
   box-shadow: 0 12px 28px rgba(43, 40, 38, 0.045);
+}
+
+.action-item {
+  background: var(--white);
 }
 
 .segmented {
@@ -3005,8 +3310,13 @@ tbody tr:hover,
 }
 
 @container (max-width: 1120px) {
+  #appointments .table-surface {
+    overflow-x: hidden;
+  }
+
   .table-surface table {
-    min-width: 920px !important;
+    min-width: 0 !important;
+    width: 100%;
   }
 
   .table-surface th,
@@ -3029,28 +3339,28 @@ tbody tr:hover,
     min-height: 36px;
   }
 
-  #appointments table {
-    min-width: 900px !important;
+  #appointments table,
+  #store table,
+  #orders table,
+  #reviews table {
+    min-width: 0 !important;
     table-layout: fixed;
+    width: 100%;
   }
-  #store table { min-width: 1120px !important; }
-  #orders table { min-width: 1040px !important; }
-  #reviews table { min-width: 980px !important; }
 
+  /* 6 колонок: Пациент / Услуга / Специалист / Дата и время / Статус / Действие */
   #appointments table th:nth-child(1),
-  #appointments table td:nth-child(1) { width: 13% !important; }
+  #appointments table td:nth-child(1) { width: 14% !important; }
   #appointments table th:nth-child(2),
-  #appointments table td:nth-child(2) { width: 16% !important; }
+  #appointments table td:nth-child(2) { width: 18% !important; }
   #appointments table th:nth-child(3),
-  #appointments table td:nth-child(3) { width: 15% !important; }
+  #appointments table td:nth-child(3) { width: 18% !important; }
   #appointments table th:nth-child(4),
   #appointments table td:nth-child(4) { width: 16% !important; }
   #appointments table th:nth-child(5),
   #appointments table td:nth-child(5) { width: 14% !important; }
   #appointments table th:nth-child(6),
-  #appointments table td:nth-child(6) { width: 13% !important; }
-  #appointments table th:nth-child(7),
-  #appointments table td:nth-child(7) { width: 13% !important; }
+  #appointments table td:nth-child(6) { width: 20% !important; }
 
   #appointments table td:nth-child(2),
   #appointments table td:nth-child(3),

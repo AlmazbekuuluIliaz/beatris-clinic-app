@@ -10,7 +10,7 @@ from collections.abc import Sequence
 import sqlalchemy as sa
 from alembic import op
 
-from app.migration_guards import has_column, has_unique_constraint
+from alembic.migration_guards import has_column, has_unique_constraint
 
 revision: str = "20260614_0002"
 down_revision: str | None = "20260614_0001"

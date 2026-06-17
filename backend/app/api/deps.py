@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
@@ -50,6 +52,6 @@ def require_doctor(current_user: models.User = Depends(get_current_user)) -> mod
     if current_user.role != models.UserRole.DOCTOR:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Doctor role is required",
+            detail="Необходима роль врача",
         )
     return current_user

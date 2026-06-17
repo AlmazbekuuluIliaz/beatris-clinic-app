@@ -85,6 +85,8 @@ let state = {
   users: [],
   schedule: [],
   reviews: [],
+  salesAnalytics: null,
+  servicesAnalytics: null,
   appointmentsSort: { key: "date", dir: "desc" },
   productsSort: { key: "title", dir: "asc" },
   ordersSort: { key: "createdAt", dir: "desc" },
@@ -139,6 +141,11 @@ let activeStatusFilter = "requests";
 let selectedAppointmentId = null;
 let selectedServiceCategoryId = null;
 let currentPanel = "overview";
+let salesPeriodDays = 30;
+let salesChartInstance = null;
+let servicesPeriodDays = 30;
+let servicesChartInstance = null;
+let servicesTrendInstance = null;
 
 const formatMoney = (value) => `${Number(value).toLocaleString(ADMIN_CONFIG.locale)} ${ADMIN_CONFIG.currencySymbol}`;
 const formatDateTime = (value) =>
@@ -345,6 +352,7 @@ async function enterAdmin() {
   showAdminShell();
   renderAll();
   bindEvents();
+  startPendingPolling();
 }
 
 async function downloadExport(path, baseName) {
@@ -502,6 +510,32 @@ async function loadAll() {
   if (!selectedAppointmentId && state.appointments.length > 0) {
     selectedAppointmentId = state.appointments[0].id;
   }
+  await Promise.all([loadSalesAnalytics(), loadServicesAnalytics()]);
+}
+
+function analyticsPeriodQuery(periodDays) {
+  const dateTo = getOverviewDate();
+  const dateFrom = new Date(dateTo);
+  dateFrom.setDate(dateFrom.getDate() - (periodDays - 1));
+  return `?dateFrom=${formatDateKey(dateFrom)}&dateTo=${formatDateKey(dateTo)}`;
+}
+
+async function loadSalesAnalytics() {
+  try {
+    state.salesAnalytics = await apiFetch(`/admin/analytics/sales${analyticsPeriodQuery(salesPeriodDays)}`);
+  } catch (err) {
+    console.error("Не удалось загрузить аналитику продаж", err);
+    state.salesAnalytics = null;
+  }
+}
+
+async function loadServicesAnalytics() {
+  try {
+    state.servicesAnalytics = await apiFetch(`/admin/analytics/services${analyticsPeriodQuery(servicesPeriodDays)}`);
+  } catch (err) {
+    console.error("Не удалось загрузить аналитику услуг", err);
+    state.servicesAnalytics = null;
+  }
 }
 
 // --- Render ---
@@ -527,6 +561,234 @@ function renderMetrics() {
   document.querySelector("#metricRevenue").textContent = formatMoney(revenue);
   document.querySelector("#metricServices").textContent = activeServices.length;
   document.querySelector("#metricStock").textContent = totalStock;
+}
+
+const SALES_PERIOD_LABELS = { 7: "за 7 дней", 30: "за 30 дней", 90: "за 90 дней" };
+
+function renderSalesAnalytics() {
+  const container = document.querySelector("#salesAnalytics");
+  if (!container) return;
+
+  container.querySelectorAll("[data-sales-period]").forEach((btn) => {
+    btn.classList.toggle("is-active", Number(btn.dataset.salesPeriod) === salesPeriodDays);
+  });
+
+  const data = state.salesAnalytics || {
+    revenue: 0,
+    ordersCount: 0,
+    averageCheck: 0,
+    revenueByPeriod: [],
+    topProducts: [],
+  };
+
+  document.querySelector("#salesRevenue").textContent = formatMoney(data.revenue || 0);
+  document.querySelector("#salesOrders").textContent = data.ordersCount || 0;
+  document.querySelector("#salesAvgCheck").textContent = formatMoney(data.averageCheck || 0);
+  document.querySelector("#salesPeriodLabel").textContent =
+    SALES_PERIOD_LABELS[salesPeriodDays] || "";
+
+  const topList = document.querySelector("#salesTopList");
+  if ((data.topProducts || []).length === 0) {
+    topList.innerHTML = `<li class="muted">Нет продаж за период.</li>`;
+  } else {
+    topList.innerHTML = data.topProducts
+      .map(
+        (p) => `
+        <li>
+          <span class="sales-top-name">${p.productTitle}</span>
+          <span class="sales-top-meta">${p.quantity} шт · <b>${formatMoney(p.revenue)}</b></span>
+        </li>`
+      )
+      .join("");
+  }
+
+  renderSalesChart(data.revenueByPeriod || []);
+}
+
+function drawAnalyticsLineChart(canvas, emptyHint, points, prevInstance) {
+  if (!canvas || typeof Chart === "undefined") return prevInstance || null;
+
+  const hasData = points.length > 0;
+  canvas.hidden = !hasData;
+  if (emptyHint) emptyHint.hidden = hasData;
+
+  if (prevInstance) prevInstance.destroy();
+  if (!hasData) return null;
+
+  const labels = points.map((p) => formatDate(`${p.period}T00:00:00`));
+  const values = points.map((p) => p.revenue);
+
+  return new Chart(canvas, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Выручка",
+          data: values,
+          borderColor: "#b1905f",
+          backgroundColor: "rgba(177, 144, 95, 0.15)",
+          fill: true,
+          tension: 0.3,
+          pointRadius: 2,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: (ctx) => formatMoney(ctx.parsed.y) },
+        },
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: (value) => formatMoney(value) },
+        },
+      },
+    },
+  });
+}
+
+function renderSalesChart(points) {
+  salesChartInstance = drawAnalyticsLineChart(
+    document.querySelector("#salesChart"),
+    document.querySelector("#salesChartEmpty"),
+    points,
+    salesChartInstance,
+  );
+}
+
+function renderServicesAnalytics() {
+  const container = document.querySelector("#servicesAnalytics");
+  if (!container) return;
+
+  container.querySelectorAll("[data-services-period]").forEach((btn) => {
+    btn.classList.toggle("is-active", Number(btn.dataset.servicesPeriod) === servicesPeriodDays);
+  });
+
+  const data = state.servicesAnalytics || {
+    totalAppointments: 0,
+    appointmentsByStatus: { pending: 0, confirmed: 0, completed: 0, cancelled: 0 },
+    appointmentsByPeriod: [],
+    topServices: [],
+  };
+  const byStatus = data.appointmentsByStatus || {};
+
+  document.querySelector("#apptTotal").textContent = data.totalAppointments || 0;
+  document.querySelector("#apptCompleted").textContent = byStatus.completed || 0;
+  document.querySelector("#apptPending").textContent = byStatus.pending || 0;
+  document.querySelector("#apptCancelled").textContent = byStatus.cancelled || 0;
+  document.querySelector("#servicesPeriodLabel").textContent =
+    SALES_PERIOD_LABELS[servicesPeriodDays] || "";
+
+  const services = data.topServices || [];
+  const topList = document.querySelector("#servicesTopList");
+  if (services.length === 0) {
+    topList.innerHTML = `<li class="muted">Нет приёмов за период.</li>`;
+  } else {
+    topList.innerHTML = services
+      .map(
+        (s, i) => `
+        <li>
+          <span class="sales-top-name">
+            <span class="legend-dot" style="background:${SERVICE_COLORS[i % SERVICE_COLORS.length]}"></span>${s.serviceTitle}
+          </span>
+          <span class="sales-top-meta"><b>${s.appointmentsCount}</b></span>
+        </li>`
+      )
+      .join("");
+  }
+
+  renderServicesDoughnut(services);
+  renderServicesTrend(data.appointmentsByPeriod || []);
+}
+
+function renderServicesTrend(points) {
+  const canvas = document.querySelector("#servicesTrendChart");
+  const emptyHint = document.querySelector("#servicesTrendEmpty");
+  if (!canvas || typeof Chart === "undefined") return;
+
+  const hasData = points.length > 0;
+  canvas.hidden = !hasData;
+  if (emptyHint) emptyHint.hidden = hasData;
+
+  if (servicesTrendInstance) {
+    servicesTrendInstance.destroy();
+    servicesTrendInstance = null;
+  }
+  if (!hasData) return;
+
+  servicesTrendInstance = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels: points.map((p) => formatDate(`${p.period}T00:00:00`)),
+      datasets: [
+        {
+          label: "Приёмов",
+          data: points.map((p) => p.appointmentsCount),
+          backgroundColor: "#b1905f",
+          borderRadius: 4,
+          maxBarThickness: 28,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.parsed.y} приём(ов)` } },
+      },
+      scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+    },
+  });
+}
+
+// Палитра под тему (золото/роза/янтарь/синий/зелёный) — общая для кольца и легенды-списка
+const SERVICE_COLORS = ["#b1905f", "#c4827c", "#a87842", "#60748a", "#479b62", "#8c6b45"];
+
+function renderServicesDoughnut(services) {
+  const canvas = document.querySelector("#servicesChart");
+  const emptyHint = document.querySelector("#servicesChartEmpty");
+  if (!canvas || typeof Chart === "undefined") return;
+
+  const hasData = services.length > 0;
+  canvas.hidden = !hasData;
+  if (emptyHint) emptyHint.hidden = hasData;
+
+  if (servicesChartInstance) {
+    servicesChartInstance.destroy();
+    servicesChartInstance = null;
+  }
+  if (!hasData) return;
+
+  servicesChartInstance = new Chart(canvas, {
+    type: "doughnut",
+    data: {
+      labels: services.map((s) => s.serviceTitle),
+      datasets: [
+        {
+          data: services.map((s) => s.appointmentsCount),
+          backgroundColor: services.map((_, i) => SERVICE_COLORS[i % SERVICE_COLORS.length]),
+          borderColor: "#ffffff",
+          borderWidth: 2,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: "62%",
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false },
+      },
+    },
+  });
 }
 
 function renderPriorityList() {
@@ -1778,6 +2040,8 @@ function applySearch(query) {
 
 function renderAll() {
   renderMetrics();
+  renderSalesAnalytics();
+  renderServicesAnalytics();
   renderPriorityList();
   renderSchedule();
   renderAppointments();
@@ -1792,13 +2056,52 @@ function renderAll() {
   renderPendingNotification();
 }
 
+const PENDING_POLL_INTERVAL = 30000;
+let lastPendingCount = null;
+let pendingPollTimer = null;
+
 function renderPendingNotification() {
+  const pending = state.appointments.filter((a) => a.status === "pending");
+  applyPendingCount(pending.length);
+}
+
+function applyPendingCount(count) {
   const countEl = document.querySelector("#sidebarPendingCount");
   if (!countEl) return;
-  const pending = state.appointments.filter((a) => a.status === "pending");
-  countEl.textContent = pending.length;
+  countEl.textContent = count;
+
   const widget = document.querySelector("#appointmentsNotification");
-  widget?.classList.toggle("has-pending", pending.length > 0);
+  widget?.classList.toggle("has-pending", count > 0);
+
+  if (lastPendingCount !== null && count > lastPendingCount && widget) {
+    const diff = count - lastPendingCount;
+    showToast(diff === 1 ? "🔔 Новая заявка на приём" : `🔔 Новых заявок: ${diff}`);
+    widget.classList.remove("is-bumped");
+    void widget.offsetWidth; // перезапуск анимации
+    widget.classList.add("is-bumped");
+  }
+  lastPendingCount = count;
+}
+
+async function pollPendingCount() {
+  try {
+    const { count } = await apiFetch("/admin/appointments/pending-count");
+    applyPendingCount(count);
+  } catch (err) {
+    // сетевой сбой опроса игнорируем — повторим на следующем тике
+  }
+}
+
+function startPendingPolling() {
+  stopPendingPolling();
+  pendingPollTimer = window.setInterval(pollPendingCount, PENDING_POLL_INTERVAL);
+}
+
+function stopPendingPolling() {
+  if (pendingPollTimer) {
+    window.clearInterval(pendingPollTimer);
+    pendingPollTimer = null;
+  }
 }
 
 function activateSpecTab(target, { skipHash = false } = {}) {
@@ -1864,6 +2167,26 @@ function bindEvents() {
 
   document.querySelectorAll(".nav-item[data-panel]").forEach((button) => {
     button.addEventListener("click", () => switchPanel(button.dataset.panel));
+  });
+
+  document.querySelectorAll("[data-sales-period]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const days = Number(button.dataset.salesPeriod);
+      if (!days || days === salesPeriodDays) return;
+      salesPeriodDays = days;
+      await loadSalesAnalytics();
+      renderSalesAnalytics();
+    });
+  });
+
+  document.querySelectorAll("[data-services-period]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const days = Number(button.dataset.servicesPeriod);
+      if (!days || days === servicesPeriodDays) return;
+      servicesPeriodDays = days;
+      await loadServicesAnalytics();
+      renderServicesAnalytics();
+    });
   });
 
   document.querySelectorAll(".tab[data-spec-tab]").forEach((tab) => {
@@ -2881,6 +3204,8 @@ async function logout() {
   try {
     await apiFetch("/auth/logout", { method: "POST" });
   } catch (_) {}
+  stopPendingPolling();
+  lastPendingCount = null;
   accessToken = null;
   showLoginScreen();
 }
