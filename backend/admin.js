@@ -555,7 +555,6 @@ function renderMetrics() {
   const activeServices = state.services.filter((s) => s.isActive !== false);
   const totalStock = state.products.reduce((sum, p) => sum + (Number(p.stock) || 0), 0);
 
-  document.querySelector("#overviewDate").textContent = formatDisplayDate(overviewDate);
   document.querySelector("#metricAppointments").textContent = todaysAppointments.length;
   document.querySelector("#metricPending").textContent = pending.length;
   document.querySelector("#metricRevenue").textContent = formatMoney(revenue);
@@ -619,18 +618,16 @@ function drawAnalyticsLineChart(canvas, emptyHint, points, prevInstance) {
   const values = points.map((p) => p.revenue);
 
   return new Chart(canvas, {
-    type: "line",
+    type: "bar",
     data: {
       labels,
       datasets: [
         {
           label: "Выручка",
           data: values,
-          borderColor: "#b1905f",
-          backgroundColor: "rgba(177, 144, 95, 0.15)",
-          fill: true,
-          tension: 0.3,
-          pointRadius: 2,
+          backgroundColor: "#b1905f",
+          borderRadius: 4,
+          maxBarThickness: 28,
         },
       ],
     },
@@ -749,7 +746,7 @@ function renderServicesTrend(points) {
 }
 
 // Палитра под тему (золото/роза/янтарь/синий/зелёный) — общая для кольца и легенды-списка
-const SERVICE_COLORS = ["#b1905f", "#c4827c", "#a87842", "#60748a", "#479b62", "#8c6b45"];
+const SERVICE_COLORS = ["#b1905f", "#c4827c", "#d8b48a", "#a8674f", "#8c6b45", "#cf9b8f"];
 
 function renderServicesDoughnut(services) {
   const canvas = document.querySelector("#servicesChart");
@@ -912,7 +909,7 @@ function renderScheduleWeek() {
         </button>`;
     }).join("");
     parts.push(
-      `<div class="${classes.join(" ")}">
+      `<div class="${classes.join(" ")}" data-schedule-day="${dateKey}">
         <div class="swg-day-number">${day.getDate()}</div>
         <div class="swg-day-slots">${slotsHtml}</div>
       </div>`
@@ -1896,7 +1893,7 @@ function fillScheduleForm(schedule = null) {
   form.elements.startTime.value = schedule?.startTime || "";
   form.elements.endTime.value = schedule?.endTime || "";
   form.elements.isAvailable.checked = schedule?.isAvailable ?? true;
-  document.querySelector("#scheduleDialogTitle").textContent = schedule ? "Редактировать окно записи" : "Добавить окно записи";
+  document.querySelector("#scheduleDialogTitle").textContent = schedule?.id ? "Редактировать окно записи" : "Добавить окно записи";
 }
 
 function getSchedulePayload(form) {
@@ -1981,10 +1978,12 @@ function buildHashRoute(panelId, params) {
 function setHashRoute(panelId, params = new URLSearchParams(), { replace = false } = {}) {
   const next = buildHashRoute(panelId, params);
   if (window.location.hash === next) return;
+  // pushState/replaceState вместо window.location.hash — не вызывает прокрутку к
+  // фрагменту и не триггерит hashchange (иначе панель рендерилась бы дважды и «дёргалась»).
   if (replace) {
     history.replaceState(null, "", next);
   } else {
-    window.location.hash = next;
+    history.pushState(null, "", next);
   }
 }
 
@@ -2289,6 +2288,9 @@ function bindEvents() {
     });
   });
 
+  // popstate — для кнопок «назад/вперёд» (pushState их не озвучивает через hashchange).
+  // hashchange — на случай ручного редактирования адреса.
+  window.addEventListener("popstate", applyHashRoute);
   window.addEventListener("hashchange", applyHashRoute);
   applyHashRoute();
 
@@ -2808,6 +2810,18 @@ function bindEvents() {
       return;
     }
     fillScheduleForm();
+    scheduleDialog.showModal();
+  });
+
+  document.querySelector("#scheduleWeekGrid").addEventListener("click", (e) => {
+    const dayCell = e.target.closest("[data-schedule-day]");
+    if (!dayCell) return;
+    if (e.target.closest("[data-schedule-edit]")) return;
+    if (state.specialists.length === 0) {
+      showToast("Сначала нужен специалист");
+      return;
+    }
+    fillScheduleForm({ date: dayCell.dataset.scheduleDay });
     scheduleDialog.showModal();
   });
 

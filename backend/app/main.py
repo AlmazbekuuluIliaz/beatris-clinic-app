@@ -54,26 +54,30 @@ def root_redirect():
     return RedirectResponse(url="/admin")
 
 
+# Статику админки отдаём без кэширования, чтобы правки сразу подхватывались браузером.
+_NO_CACHE = {"Cache-Control": "no-store"}
+
+
 @app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
 @app.get("/admin.html", response_class=HTMLResponse, include_in_schema=False)
 def serve_admin_html():
     with open("admin.html", "r", encoding="utf-8") as f:
-        return HTMLResponse(content=f.read())
+        return HTMLResponse(content=f.read(), headers=_NO_CACHE)
 
 
 @app.get("/admin.js", include_in_schema=False)
 def serve_admin_js():
     with open("admin.js", "r", encoding="utf-8") as f:
-        return Response(content=f.read(), media_type="application/javascript")
+        return Response(content=f.read(), media_type="application/javascript", headers=_NO_CACHE)
 
 
 @app.get("/admin-config.js", include_in_schema=False)
 def serve_admin_config_js():
     with open("admin-config.js", "r", encoding="utf-8") as f:
-        return Response(content=f.read(), media_type="application/javascript")
+        return Response(content=f.read(), media_type="application/javascript", headers=_NO_CACHE)
 
 
 @app.get("/admin.css", include_in_schema=False)
 def serve_admin_css():
     with open("admin.css", "r", encoding="utf-8") as f:
-        return Response(content=f.read(), media_type="text/css")
+        return Response(content=f.read(), media_type="text/css", headers=_NO_CACHE)

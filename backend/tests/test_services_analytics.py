@@ -86,12 +86,13 @@ def test_services_analytics_counts_only_completed(db: Session, catalog: dict) ->
     assert result["appointmentsByStatus"]["cancelled"] == 0
     assert result["appointmentsByStatus"]["pending"] == 0
 
-    # Динамика и топ — по завершённым приёмам
-    assert {"period": "2026-06-10", "appointmentsCount": 3} in result["appointmentsByPeriod"]
+    # Динамика и топ — по записям периода, кроме отменённых
+    # (2 завершённых лазера + 1 подтверждённый лазер + 1 завершённый пилинг = 4)
+    assert {"period": "2026-06-10", "appointmentsCount": 4} in result["appointmentsByPeriod"]
 
     titles = {s["serviceTitle"]: s for s in result["topServices"]}
     assert set(titles) == {"Лазер", "Пилинг"}
-    assert titles["Лазер"]["appointmentsCount"] == 2
+    assert titles["Лазер"]["appointmentsCount"] == 3
     assert titles["Пилинг"]["appointmentsCount"] == 1
     # Топ отсортирован по числу приёмов убыванию
     assert [s["serviceTitle"] for s in result["topServices"]] == ["Лазер", "Пилинг"]

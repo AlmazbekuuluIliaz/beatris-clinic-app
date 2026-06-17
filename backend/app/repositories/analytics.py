@@ -118,7 +118,8 @@ def get_services_analytics(
     """Аналитика приёмов по количеству (без денег — цены услуг пока не заданы).
 
     KPI по статусам считаются по всем записям периода. Динамика по дням и топ
-    услуг — по завершённым приёмам. Группировка по дате приёма (appointment_date).
+    услуг — по записям, кроме отменённых (реальная загрузка). Группировка по
+    дате приёма (appointment_date).
     """
     in_period = (
         models.Appointment.appointment_date >= date_from,
@@ -136,13 +137,13 @@ def get_services_analytics(
         by_status[key] = int(count or 0)
     total_appointments = sum(by_status.values())
 
-    completed = (models.Appointment.status == models.AppointmentStatus.COMPLETED,)
+    active = (models.Appointment.status != models.AppointmentStatus.CANCELLED,)
 
-    # --- Динамика: завершённые приёмы по дням ---
+    # --- Динамика: приёмы по дням (кроме отменённых) ---
     day_col = models.Appointment.appointment_date
     period_rows = db.execute(
         select(day_col, func.count(models.Appointment.id))
-        .where(*in_period, *completed)
+        .where(*in_period, *active)
         .group_by(day_col)
         .order_by(day_col)
     ).all()
@@ -151,11 +152,11 @@ def get_services_analytics(
         for row in period_rows
     ]
 
-    # --- Топ услуг по числу завершённых приёмов ---
+    # --- Топ услуг по числу приёмов (кроме отменённых) ---
     top_rows = db.execute(
         select(models.Service.title, func.count(models.Appointment.id))
         .join(models.Service, models.Appointment.service_id == models.Service.id)
-        .where(*in_period, *completed)
+        .where(*in_period, *active)
         .group_by(models.Service.title)
         .order_by(func.count(models.Appointment.id).desc())
         .limit(top_limit)

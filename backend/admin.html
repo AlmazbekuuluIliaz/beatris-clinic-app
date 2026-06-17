@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300..900&display=swap"
     />
-    <link rel="stylesheet" href="admin.css" />
+    <link rel="stylesheet" href="admin.css?v=3" />
   </head>
   <body>
     <div class="login-screen" id="loginScreen" style="display:none">
@@ -147,7 +147,6 @@
             <div>
               <h1 id="overview-title">Сводка по клинике</h1>
             </div>
-            <span class="date-pill" id="overviewDate">14.05.2026</span>
           </div>
 
           <div class="metric-grid">
@@ -208,17 +207,19 @@
 
             <div class="sales-body">
               <div class="sales-chart-box">
-                <canvas id="servicesTrendChart" height="220" aria-label="Завершённые приёмы по дням"></canvas>
-                <p class="muted sales-empty" id="servicesTrendEmpty" hidden>За выбранный период завершённых приёмов нет.</p>
+                <canvas id="servicesTrendChart" height="220" aria-label="Приёмы по дням"></canvas>
+                <p class="muted sales-empty" id="servicesTrendEmpty" hidden>За выбранный период приёмов нет.</p>
               </div>
               <div class="sales-top">
-                <h4>Топ услуг</h4>
                 <div class="services-breakdown">
                   <div class="services-donut">
                     <canvas id="servicesChart" height="160" aria-label="Доля приёмов по услугам"></canvas>
                     <p class="muted sales-empty" id="servicesChartEmpty" hidden>Нет данных за период.</p>
                   </div>
-                  <ol class="sales-top-list" id="servicesTopList"></ol>
+                  <div class="services-top-col">
+                    <h4>Топ услуг</h4>
+                    <ol class="sales-top-list" id="servicesTopList"></ol>
+                  </div>
                 </div>
               </div>
             </div>
@@ -585,10 +586,6 @@
             <div>
               <h1 id="settings-title">Настройки о нас</h1>
             </div>
-            <div class="header-actions">
-              <button class="btn btn-secondary" type="button" id="resetSettings" data-settings-reset>Сбросить</button>
-              <button class="btn btn-primary" type="button" id="saveSettings" data-settings-save>Сохранить</button>
-            </div>
           </div>
 
           <form class="settings-stack" id="settingsForm">
@@ -717,11 +714,6 @@
                 </label>
               </div>
             </section>
-
-            <div class="settings-actions" aria-label="Действия с настройками">
-              <button class="btn btn-secondary" type="button" data-settings-reset>Сбросить</button>
-              <button class="btn btn-primary" type="button" data-settings-save>Сохранить</button>
-            </div>
           </form>
         </section>
 
