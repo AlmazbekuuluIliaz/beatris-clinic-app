@@ -16,7 +16,7 @@ from datetime import datetime
 import sqlalchemy as sa
 from alembic import op
 
-from alembic.migration_guards import has_column, has_unique_constraint
+from app.migration_guards import has_column, has_unique_constraint
 
 revision: str = "20260605_0001"
 down_revision: str | None = "20260604_0001"
