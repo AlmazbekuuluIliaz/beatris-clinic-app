@@ -3490,12 +3490,4 @@ function applyAdminConfig() {
 
 applyAdminConfig();
 bindLoginForm();
-// Если в браузере есть действующая refresh-кука («Запомнить меня») — входим без
-// повторного ввода пароля.
-tryRestoreSession().then((ok) => {
-  if (ok) {
-    enterAdmin();
-  } else {
-    showLoginScreen();
-  }
-});
+showLoginScreen();
