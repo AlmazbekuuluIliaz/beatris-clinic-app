@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.deps import require_admin
 from app.api.routers.admin.appointments import router as appointments_router
+from app.api.routers.admin.backup import router as backup_router
 from app.api.routers.admin.clinic import router as clinic_router
 from app.api.routers.admin.orders import router as orders_router
 from app.api.routers.admin.products import router as products_router
@@ -21,6 +22,7 @@ router = APIRouter(
 )
 
 router.include_router(appointments_router)
+router.include_router(backup_router)
 router.include_router(clinic_router)
 router.include_router(orders_router)
 router.include_router(products_router)

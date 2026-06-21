@@ -860,11 +860,20 @@ function renderSchedule() {
 }
 
 const WEEK_DAY_NAMES = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
-let scheduleMonthDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+const MONTH_NAMES_FULL = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
+let scheduleAnchorDate = new Date();
+let scheduleView = "week"; // day | week | month | year
 
 function addDays(d, n) {
   const r = new Date(d);
   r.setDate(r.getDate() + n);
+  return r;
+}
+
+function startOfWeek(d) {
+  const r = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const offset = (r.getDay() + 6) % 7;
+  r.setDate(r.getDate() - offset);
   return r;
 }
 
@@ -874,22 +883,35 @@ function localDateKey(date) {
 
 function renderScheduleWeek() {
   const grid = document.querySelector("#scheduleWeekGrid");
-  if (!grid) return;
+  const title = document.querySelector("#scheduleWeekRange");
+  if (!grid || !title) return;
+  grid.className = "schedule-week-grid";
+  grid.style.gridTemplateRows = "";
 
-  const monthStart = new Date(scheduleMonthDate.getFullYear(), scheduleMonthDate.getMonth(), 1);
+  if (scheduleView === "day") return renderScheduleDay(grid, title);
+  if (scheduleView === "week") return renderScheduleWeekStrip(grid, title);
+  if (scheduleView === "year") return renderScheduleYear(grid, title);
+  return renderScheduleMonth(grid, title);
+}
+
+function slotButton(slot) {
+  const statusClass = slot.isAvailable ? "is-available" : "is-hidden";
+  return `<button type="button" class="swg-slot ${statusClass}" data-schedule-edit="${slot.id}" title="${slot.specialist.fullName}">
+    <strong>${slot.startTime}–${slot.endTime}</strong>
+    <span>${slot.specialist.fullName}</span>
+  </button>`;
+}
+
+function renderScheduleMonth(grid, title) {
+  const monthStart = new Date(scheduleAnchorDate.getFullYear(), scheduleAnchorDate.getMonth(), 1);
   const offset = (monthStart.getDay() + 6) % 7;
   const calendarStart = addDays(monthStart, -offset);
   const todayKey = localDateKey(new Date());
   const parts = [];
 
-  document.querySelector("#scheduleWeekRange").textContent = monthStart.toLocaleDateString(
-    ADMIN_CONFIG.locale,
-    { month: "long", year: "numeric" },
-  );
+  title.textContent = `${MONTH_NAMES_FULL[monthStart.getMonth()]} ${monthStart.getFullYear()}`;
 
-  WEEK_DAY_NAMES.forEach((name) => {
-    parts.push(`<div class="swg-cell swg-header">${name}</div>`);
-  });
+  WEEK_DAY_NAMES.forEach((name) => parts.push(`<div class="swg-cell swg-header">${name}</div>`));
 
   for (let index = 0; index < 42; index += 1) {
     const day = addDays(calendarStart, index);
@@ -900,23 +922,90 @@ function renderScheduleWeek() {
     const classes = ["swg-month-day"];
     if (day.getMonth() !== monthStart.getMonth()) classes.push("is-outside");
     if (dateKey === todayKey) classes.push("is-today");
-    const slotsHtml = daySlots.map((slot) => {
-      const statusClass = slot.isAvailable ? "is-available" : "is-hidden";
-      return `
-        <button type="button" class="swg-slot ${statusClass}" data-schedule-edit="${slot.id}" title="${slot.specialist.fullName}">
-          <strong>${slot.startTime}–${slot.endTime}</strong>
-          <span>${slot.specialist.fullName}</span>
-        </button>`;
-    }).join("");
-    parts.push(
-      `<div class="${classes.join(" ")}" data-schedule-day="${dateKey}">
+    parts.push(`
+      <div class="${classes.join(" ")}" data-schedule-day="${dateKey}">
         <div class="swg-day-number">${day.getDate()}</div>
-        <div class="swg-day-slots">${slotsHtml}</div>
-      </div>`
-    );
+        <div class="swg-day-slots">${daySlots.map(slotButton).join("")}</div>
+      </div>`);
   }
 
-  grid.style.gridTemplateRows = "";
+  grid.innerHTML = parts.join("");
+}
+
+function renderScheduleWeekStrip(grid, title) {
+  const weekStart = startOfWeek(scheduleAnchorDate);
+  const weekEnd = addDays(weekStart, 6);
+  const todayKey = localDateKey(new Date());
+  const parts = [];
+
+  const fmt = (d) => `${d.getDate()} ${MONTH_NAMES_FULL[d.getMonth()].toLowerCase().slice(0, 3)}.`;
+  title.textContent = weekStart.getMonth() === weekEnd.getMonth()
+    ? `${weekStart.getDate()} – ${weekEnd.getDate()} ${MONTH_NAMES_FULL[weekStart.getMonth()]} ${weekStart.getFullYear()}`
+    : `${fmt(weekStart)} – ${fmt(weekEnd)} ${weekEnd.getFullYear()}`;
+
+  WEEK_DAY_NAMES.forEach((name, i) => {
+    const day = addDays(weekStart, i);
+    parts.push(`<div class="swg-cell swg-header">${name}<br><small>${day.getDate()}</small></div>`);
+  });
+
+  for (let i = 0; i < 7; i += 1) {
+    const day = addDays(weekStart, i);
+    const dateKey = localDateKey(day);
+    const daySlots = state.schedule
+      .filter((slot) => slot.date === dateKey)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime));
+    const classes = ["swg-month-day", "swg-week-day"];
+    if (dateKey === todayKey) classes.push("is-today");
+    parts.push(`
+      <div class="${classes.join(" ")}" data-schedule-day="${dateKey}">
+        <div class="swg-day-slots">${daySlots.map(slotButton).join("")}</div>
+      </div>`);
+  }
+  grid.innerHTML = parts.join("");
+}
+
+function renderScheduleDay(grid, title) {
+  const dayDate = new Date(scheduleAnchorDate.getFullYear(), scheduleAnchorDate.getMonth(), scheduleAnchorDate.getDate());
+  const dateKey = localDateKey(dayDate);
+  const todayKey = localDateKey(new Date());
+  title.textContent = `${dayDate.getDate()} ${MONTH_NAMES_FULL[dayDate.getMonth()]} ${dayDate.getFullYear()}`;
+  grid.className = "schedule-week-grid schedule-day-view";
+  const daySlots = state.schedule
+    .filter((slot) => slot.date === dateKey)
+    .sort((a, b) => a.startTime.localeCompare(b.startTime));
+  const todayClass = dateKey === todayKey ? " is-today" : "";
+  const empty = daySlots.length === 0
+    ? `<p class="swg-day-empty">На этот день окон нет</p>`
+    : "";
+  grid.innerHTML = `
+    <div class="swg-cell swg-header">${WEEK_DAY_NAMES[(dayDate.getDay() + 6) % 7]}, ${dayDate.getDate()}</div>
+    <div class="swg-month-day swg-day-single${todayClass}" data-schedule-day="${dateKey}">
+      <div class="swg-day-slots">${daySlots.map(slotButton).join("")}</div>
+      ${empty}
+    </div>`;
+}
+
+function renderScheduleYear(grid, title) {
+  const year = scheduleAnchorDate.getFullYear();
+  title.textContent = String(year);
+  grid.className = "schedule-week-grid schedule-year-view";
+  const todayKey = localDateKey(new Date());
+  const parts = [];
+  for (let m = 0; m < 12; m += 1) {
+    const monthStart = new Date(year, m, 1);
+    const daysInMonth = new Date(year, m + 1, 0).getDate();
+    let count = 0;
+    for (let d = 1; d <= daysInMonth; d += 1) {
+      const key = localDateKey(new Date(year, m, d));
+      if (state.schedule.some((slot) => slot.date === key)) count += 1;
+    }
+    const isCurrent = monthStart.getMonth() === new Date(todayKey).getMonth() && monthStart.getFullYear() === new Date(todayKey).getFullYear();
+    parts.push(`
+      <button type="button" class="swg-year-month${isCurrent ? " is-today" : ""}" data-schedule-month="${year}-${String(m + 1).padStart(2, "0")}">
+        <strong>${MONTH_NAMES_FULL[m]}</strong>
+        <span>${count > 0 ? `${count} ${count === 1 ? "день" : count < 5 ? "дня" : "дней"} с окнами` : "нет окон"}</span>
+      </button>`);
+  }
   grid.innerHTML = parts.join("");
 }
 
@@ -1793,6 +1882,7 @@ function fillSpecialistForm(specialist = null) {
   form.elements.experienceYears.value = specialist?.experienceYears ?? "";
   form.elements.userId.value = specialist?.userId || "";
   form.elements.photoUrl.value = specialist?.photoUrl || "";
+  form.elements.photoUrl.dispatchEvent(new Event("change"));
   form.elements.isActive.checked = specialist?.isActive ?? true;
   renderSpecialistServiceOptions(form.elements.specialization.value, specialist?.serviceIds || []);
   document.querySelector("#specialistDialogTitle").textContent = specialist ? "Редактировать врача" : "Добавить врача";
@@ -1819,6 +1909,7 @@ function fillServiceCategoryForm(category = null) {
   form.elements.slug.value = category?.slug || "";
   form.elements.slug.dataset.userEdited = category ? "true" : "";
   form.elements.imageUrl.value = category?.imageUrl || "";
+  form.elements.imageUrl.dispatchEvent(new Event("change"));
   form.elements.description.value = category?.description || "";
   document.querySelector("#serviceCategoryDialogTitle").textContent =
     category ? "Редактировать категорию" : "Добавить категорию";
@@ -1835,6 +1926,7 @@ function fillServiceForm(service = null) {
   form.elements.price.value = service?.price ?? "";
   form.elements.durationMinutes.value = service?.durationMinutes ?? "";
   form.elements.imageUrl.value = service?.imageUrl || "";
+  form.elements.imageUrl.dispatchEvent(new Event("change"));
   form.elements.description.value = service?.description || "";
   form.elements.contraindications.value = service?.contraindications || "";
   form.elements.isActive.checked = service?.isActive ?? true;
@@ -1866,6 +1958,7 @@ function fillProductForm(product = null) {
   form.elements.price.value = product?.price ?? "";
   form.elements.stock.value = product?.stock ?? "";
   form.elements.imageUrl.value = product?.imageUrl || "";
+  form.elements.imageUrl.dispatchEvent(new Event("change"));
   form.elements.description.value = product?.description || "";
   form.elements.isActive.checked = product?.isActive ?? true;
   document.querySelector("#productDialogTitle").textContent = product ? "Редактировать товар" : "Добавить товар";
@@ -2196,18 +2289,31 @@ function bindEvents() {
     tab.addEventListener("click", () => activateServicesTab(tab.dataset.svcTab));
   });
 
-  document.querySelector("#schedulePrevWeek")?.addEventListener("click", () => {
-    scheduleMonthDate = new Date(scheduleMonthDate.getFullYear(), scheduleMonthDate.getMonth() - 1, 1);
+  const shiftScheduleAnchor = (direction) => {
+    const d = new Date(scheduleAnchorDate);
+    if (scheduleView === "day") d.setDate(d.getDate() + direction);
+    else if (scheduleView === "week") d.setDate(d.getDate() + 7 * direction);
+    else if (scheduleView === "year") d.setFullYear(d.getFullYear() + direction);
+    else d.setMonth(d.getMonth() + direction);
+    scheduleAnchorDate = d;
     renderScheduleWeek();
-  });
-  document.querySelector("#scheduleNextWeek")?.addEventListener("click", () => {
-    scheduleMonthDate = new Date(scheduleMonthDate.getFullYear(), scheduleMonthDate.getMonth() + 1, 1);
-    renderScheduleWeek();
-  });
+  };
+
+  document.querySelector("#schedulePrevWeek")?.addEventListener("click", () => shiftScheduleAnchor(-1));
+  document.querySelector("#scheduleNextWeek")?.addEventListener("click", () => shiftScheduleAnchor(1));
   document.querySelector("#scheduleTodayWeek")?.addEventListener("click", () => {
-    const today = new Date();
-    scheduleMonthDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    scheduleAnchorDate = new Date();
     renderScheduleWeek();
+  });
+
+  document.querySelectorAll(".swn-view[data-schedule-view]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      scheduleView = btn.dataset.scheduleView;
+      document.querySelectorAll(".swn-view[data-schedule-view]").forEach((b) => {
+        b.classList.toggle("is-active", b === btn);
+      });
+      renderScheduleWeek();
+    });
   });
 
   populateSettingsForm();

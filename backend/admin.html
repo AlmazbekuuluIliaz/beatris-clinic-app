@@ -427,10 +427,23 @@
           <div class="tab-panel" data-spec-tab="schedule" role="tabpanel">
             <section class="surface">
               <div class="schedule-week-nav">
-                <button class="btn btn-secondary" type="button" id="schedulePrevWeek" aria-label="Предыдущий месяц">←</button>
-                <span id="scheduleWeekRange">—</span>
-                <button class="btn btn-secondary" type="button" id="scheduleNextWeek" aria-label="Следующий месяц">→</button>
-                <button class="btn btn-secondary" type="button" id="scheduleTodayWeek">Сегодня</button>
+                <div class="swn-title">
+                  <span class="swn-accent" aria-hidden="true"></span>
+                  <h2 id="scheduleWeekRange">—</h2>
+                </div>
+                <div class="swn-controls">
+                  <div class="swn-view-filter" role="tablist" aria-label="Масштаб календаря">
+                    <button class="swn-view" type="button" data-schedule-view="day">День</button>
+                    <button class="swn-view is-active" type="button" data-schedule-view="week">Неделя</button>
+                    <button class="swn-view" type="button" data-schedule-view="month">Месяц</button>
+                    <button class="swn-view" type="button" data-schedule-view="year">Год</button>
+                  </div>
+                  <div class="swn-nav">
+                    <button class="swn-arrow" type="button" id="schedulePrevWeek" aria-label="Назад">‹</button>
+                    <button class="swn-today" type="button" id="scheduleTodayWeek">Сегодня</button>
+                    <button class="swn-arrow" type="button" id="scheduleNextWeek" aria-label="Вперёд">›</button>
+                  </div>
+                </div>
               </div>
               <div class="schedule-week-grid" id="scheduleWeekGrid"></div>
               <div class="schedule-board-fallback" id="scheduleBoard" hidden></div>
